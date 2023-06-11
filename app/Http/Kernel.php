@@ -2,7 +2,9 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\AdminCheck;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Support\Facades\Auth;
 
 class Kernel extends HttpKernel
 {
@@ -43,6 +45,11 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+
+        'admin' => [
+            'auth:api',
+            AdminCheck::class
+        ]
     ];
 
     /**
