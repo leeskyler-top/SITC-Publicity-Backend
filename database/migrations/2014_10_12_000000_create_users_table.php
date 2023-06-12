@@ -17,11 +17,11 @@ return new class extends Migration
             $table->string('department');
             $table->string('classname');
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email');
             $table->string('password');
             $table->string('token')->nullable();
-            $table->text('note');
-            $table->enum('is_admin', [0, 1])->default(0);
+            $table->text('note')->nullable();
+            $table->enum('is_admin', ['0', '1'])->default('0');
             $table->timestamps();
             $table->softDeletes();
         });

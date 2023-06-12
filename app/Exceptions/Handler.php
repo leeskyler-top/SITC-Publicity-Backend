@@ -31,16 +31,16 @@ class Handler extends ExceptionHandler
 //            //
 //        });
         $this->renderable(function (AuthenticationException $e) {
-            return response()->json(['msg' => "unauthorized"], 401);
+            return response()->json(['msg' => "未授权"], 401);
         });
         $this->renderable(function (NotFoundHttpException $e) {
-            return response()->json(['msg' => "not found"], 404);
+            return response()->json(['msg' => "试图访问的API未找到"], 404);
         });
         $this->renderable(function (MethodNotAllowedHttpException $e) {
-            return response()->json(['msg' => "method not allowed"], 405);
+            return response()->json(['msg' => "此HTTP请求模式不被允许"], 405);
         });
         $this->renderable(function (TooManyRequestsHttpException $e) {
-            return response()->json(['msg' => "too many request"], 429);
+            return response()->json(['msg' => "请求过多"], 429);
         });
     }
 }

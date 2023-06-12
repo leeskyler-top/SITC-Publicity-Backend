@@ -16,9 +16,9 @@ class AdminCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::user()->is_admin === 1) {
+        if (Auth::user()->is_admin === '1') {
             return $next($request);
         }
-        return response()->json(['msg' => "unauthoized: illegal role!"]);
+        return response()->json(['msg' => "未授权: 非法角色!"], 401);
     }
 }
