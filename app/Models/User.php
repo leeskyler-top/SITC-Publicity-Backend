@@ -66,4 +66,19 @@ class User extends Authenticatable
 
         return $pwd;
     }
+
+    public function equipmentRents()
+    {
+        return $this->hasMany(EquipmentRent::class, 'user_id');
+    }
+
+    public function activities()
+    {
+        return $this->belongsToMany(Activity::class, 'activity_users');
+    }
+
+    public function checkInUsers()
+    {
+        return $this->belongsToMany(User::class, 'check_in_users', 'user_id', 'check_in_id');
+    }
 }

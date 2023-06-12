@@ -11,17 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('activities', function (Blueprint $table) {
             $table->id();
-            $table->string('uid');
-            $table->string('department');
-            $table->string('classname');
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->string('token')->nullable();
+            $table->foreignId('admin_id')->constrained('users');
+            $table->string('title');
+            $table->enum('type', ['self-enrollment', 'enrollment', 'assigned'])->default('self-enrollment');
             $table->text('note');
-            $table->enum('is_admin', [0, 1])->default(0);
+            $table->dateTime('start_time');
+            $table->dateTime('end_time');
             $table->timestamps();
             $table->softDeletes();
         });
@@ -32,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('activities');
     }
 };
