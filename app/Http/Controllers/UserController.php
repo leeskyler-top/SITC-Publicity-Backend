@@ -38,7 +38,7 @@ class UserController extends Controller
             'email' => [
                 'required',
                 'email:filter',
-                Rule::unique('users', 'deleted_at')
+                Rule::unique('users', 'email')->where('deleted_at')
             ],
             'password' => 'required',
             'department' => 'required',
