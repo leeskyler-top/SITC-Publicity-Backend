@@ -18,4 +18,7 @@ class ActivityUser extends Model
     {
         return $this->belongsTo(Activity::class, 'activity_id');
     }
+
+    protected $guarded = [];
+
 }

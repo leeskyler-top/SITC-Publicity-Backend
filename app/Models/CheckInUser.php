@@ -19,4 +19,7 @@ class CheckInUser extends Model
         return $this->belongsToMany(User::class, 'check_in_users', 'check_in_id', 'user_id');
     }
 
+    protected $guarded = [];
+
+
 }

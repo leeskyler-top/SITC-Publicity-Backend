@@ -38,7 +38,7 @@ class UserController extends Controller
             'email' => [
                 'required',
                 'email:filter',
-                Rule::unique('users', 'deleted_at')
+                Rule::unique('users', 'email')->where('deleted_at')
             ],
             'password' => 'required',
             'department' => 'required',
@@ -66,7 +66,7 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show()
+    public function show($id = 'my')
     {
         $user = Auth::user();
         return $this->jsonRes(200, '获取个人账户信息成功', $user->makeHidden(['token']));
@@ -89,7 +89,7 @@ class UserController extends Controller
             return !empty($value) || $value == 0;
         });
         $validator = Validator::make($data, [
-            'is_admin' => 'nullable|in:"0","1"',
+            'is_admin' => ['nullable', Rule::in(['0','1'])],
             'uid' => 'nullable|integer|regex:/^\d{8}$/',
             'name' => 'nullable|string',
             'department' => 'nullable|string',
@@ -106,8 +106,9 @@ class UserController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-        $user->fill($data)->refresh();
-        return $this->jsonRes(200, '变更成功');
+        $user->fill($data)->save();
+        $user->refresh();
+        return $this->jsonRes(200, '变更成功', $user->makeHidden(['token']));
     }
 
     /**
