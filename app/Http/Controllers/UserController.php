@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -130,7 +131,7 @@ class UserController extends Controller
         }
     }
 
-    function changePwd($id)
+    function resetPwd($id)
     {
         if (!is_numeric($id)) {
             return $this->jsonRes(404, '用户未找到');
@@ -146,5 +147,102 @@ class UserController extends Controller
             $user->save();
             return $this->jsonRes(200, "密码重置成功", ['password' => $pwd]);
         }
+    }
+
+    function changePwd(Request $request)
+    {
+        $data = $request->only(['origin_password', 'new_password', 'repeat_password']);
+        $validator = Validator::make($data, [
+            'origin_password' => 'required|current_password',
+            'new_password' => 'required',
+            'repeat_password' => 'required|same:new_password',
+        ], [
+            'origin_password' => '提供的用户凭据是无效的',
+            'new_password' => '必填',
+            'repeat_password' => '与即将新设定的密码不符'
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $user = Auth::user();
+        $user->password = $data['new_password'];
+        $user->save();
+        return $this->jsonRes(200, '密码修改成功');
+    }
+
+    public function batchStore(Request $request)
+    {
+        $data = $request->only(['csv_file']);
+        $validator = Validator::make($data, [
+            'csv_file' => 'required|mimes:csv'
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, '必须是csv或txt文件');
+        }
+        $file = $request->file('csv_file')->openFile('r');
+        $file->setFlags(\SplFileObject::READ_CSV);
+
+        $validationRules = [
+            'is_admin' => 'required|in:"0","1"',
+            'uid' => 'required|integer|regex:/^\d{8}$/',
+            'name' => 'required',
+            'email' => [
+                'required',
+                'email:filter',
+                Rule::unique('users', 'email')->where('deleted_at')
+            ],
+            'password' => 'required',
+            'department' => 'required',
+            'classname' => 'required',
+            'note' => 'nullable|string'
+        ];
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($file as $key => $element) {
+                if ($key === 0) { // Skip the header row
+                    continue;
+                }
+                if (count($element) !== 8) {
+                    throw new \Exception("Invalid CSV format. Please check the file contents.");
+                }
+                $validator = Validator::make([
+                    'is_admin' => $element[0],
+                    'uid' => $element[1],
+                    'name' => $element[2],
+                    'email' => $element[3],
+                    'password' => $element[4],
+                    'department' => $element[5],
+                    'classname' => $element[6],
+                    'note' => $element[7],
+
+                ], $validationRules,  [
+                    'email.unique' => '邮箱已被使用',
+                ]);
+                if ($validator->fails()) {
+                    DB::rollBack();
+                    return $this->jsonRes(400, $validator->errors()->first());
+                }
+                $user = User::create([
+                    'is_admin' => $element[0],
+                    'uid' => $element[1],
+                    'name' => $element[2],
+                    'email' => $element[3],
+                    'password' => $element[4],
+                    'department' => $element[5],
+                    'classname' => $element[6],
+                    'note' => $element[7],
+                ]);
+                $user->refresh();
+                $users[] = $user;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['msg' => '在执行批量操作时发生严重错误，已回滚操作！'],500);
+        }
+
+        return $this->jsonRes(200, '用户批量添加完成', $users);
     }
 }
