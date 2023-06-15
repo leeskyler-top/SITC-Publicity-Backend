@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('activities', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('admin_id')->constrained('users');
+            $table->unsignedBigInteger('admin_id');
+            $table->foreign('admin_id')->references('id')->on("users");
             $table->string('title');
             $table->enum('type', ['self-enrollment', 'enrollment', 'assigned'])->default('self-enrollment');
             $table->text('note');
