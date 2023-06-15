@@ -16,11 +16,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        $user = User::all();
-        $user->each(function ($item) {
+        $users = User::all();
+        $users->each(function ($item) {
             $item->makeHidden(['token']);
         });
-        return $this->jsonRes(200, null, $user);
+        return $this->jsonRes(200, null, $users);
     }
 
     /**

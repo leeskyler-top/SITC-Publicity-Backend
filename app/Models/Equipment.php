@@ -24,6 +24,10 @@ class Equipment extends Model
         return $date->format("Y-m-d H:i:s");
     }
 
+    public function equipmentAudits()
+    {
+        return $this->hasMany(EquipmentAudit::class);
+    }
     protected $guarded = [];
 
 }

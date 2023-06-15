@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string("name");
             $table->string("model");
             $table->enum("status", ['unassigned', 'assigned', 'damaged', 'missed'])->default('unassigned');
+            $table->dateTime("create_time", ['unassigned', 'assigned', 'damaged', 'missed'])->default('unassigned');
             $table->timestamps();
             $table->softDeletes();
         });
