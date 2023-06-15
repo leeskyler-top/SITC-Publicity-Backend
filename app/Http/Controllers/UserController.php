@@ -174,10 +174,10 @@ class UserController extends Controller
     {
         $data = $request->only(['csv_file']);
         $validator = Validator::make($data, [
-            'csv_file' => 'required|mimes:csv'
+            'csv_file' => 'required|mimes:csv,txt'
         ]);
         if ($validator->fails()) {
-            return $this->jsonRes(422, '必须是csv或txt文件');
+            return $this->jsonRes(422, '必须是csv文件');
         }
         $file = $request->file('csv_file')->openFile('r');
         $file->setFlags(\SplFileObject::READ_CSV);
