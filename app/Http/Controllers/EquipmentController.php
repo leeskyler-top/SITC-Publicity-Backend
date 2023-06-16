@@ -206,9 +206,11 @@ class EquipmentController extends Controller
 
 
     // 我的设备
-    public function showMyEquipment($type)
+    public function showMyEquipment($status)
     {
         $user = Auth::user();
+        $equipments =$user->equipmentRents()->where('status', $status)->get();
+        return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', $equipments);
     }
 
     // 设备申请

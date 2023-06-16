@@ -23,8 +23,7 @@ return new class extends Migration
             $table->text('assigned_url')->nullable();
             $table->text('returned_url')->nullable();
             $table->text('damaged_url')->nullable();
-            $table->enum('item_status', ['returned', 'assigned', 'reject', 'applying'])->nullable()->default('returned');
-            $table->enum('return_status', ['returned', 'assigned', 'damaged' , 'missed'])->nullable()->default('returned');
+            $table->enum('status', ['applying', 'returned', 'reject', 'assigned', 'damaged', 'missed'])->nullable()->default('returned');
         });
     }
 

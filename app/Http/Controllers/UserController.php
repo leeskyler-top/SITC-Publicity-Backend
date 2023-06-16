@@ -20,7 +20,7 @@ class UserController extends Controller
         $users->each(function ($item) {
             $item->makeHidden(['token']);
         });
-        return $this->jsonRes(200, null, $users);
+        return $this->jsonRes(200, '用户获取成功', $users);
     }
 
     /**
