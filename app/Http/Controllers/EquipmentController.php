@@ -236,7 +236,7 @@ class EquipmentController extends Controller
         $validator = Validator::make($data, [
             'equipment_id' => [
                 'required',
-                Rule::exists("equipments", 'id')->where("status", 'assigned')
+                Rule::exists("equipments", 'id')->where("status", 'unassigned')
             ],
             'apply_time' => 'required|date_format:Y-m-d H:i|after:now',
             'assigned_url' => 'required|array',
@@ -275,12 +275,38 @@ class EquipmentController extends Controller
         return $this->jsonRes(200, "审核列表获取成功", $equipment_enrollments);
     }
     // 设备审批
-//    public function auditApply($id)
-//    {
-//        if (!is_numeric($id)) {
-//            return $this->jsonRes(404, '设备未找到');
-//        }
-//    }
+    public function auditApplication($id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '设备申请未找到');
+        }
+
+        $application = EquipmentRent::find($id);
+
+        if (!$application || $application->status !== 'applying') {
+            return $this->jsonRes(404, '设备申请未找到');
+        }
+
+        $application->status = 'assigned';
+        $application->save();
+
+        // 更新设备状态为"assigned"
+        $equipment = $application->equipment;
+        if ($equipment) {
+            $equipment->status = 'assigned';
+            $equipment->save();
+        }
+
+        // 拒绝其他申请
+        $otherApplications = $equipment->equipmentRents()->where('status', 'applying')->where('id', '!=', $id)->get();
+        foreach ($otherApplications as $otherApplication) {
+            $otherApplication->status = 'reject';
+            $otherApplication->save();
+        }
+
+        return $this->jsonRes(200, '此申请已通过', $application);
+    }
+
     // 设备归还
     // 延期申报
     // 设备异常报告
