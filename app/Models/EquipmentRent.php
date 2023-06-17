@@ -12,17 +12,24 @@ class EquipmentRent extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id','id');
     }
 
     // 是不是这样用的一会儿再说，他妈的，头一回要做别名外键！
     public function audit()
     {
-        return $this->belongsTo(User::class, 'audit_id');
+        return $this->belongsTo(User::class, 'audit_id','id');
     }
 
     public function equipment()
     {
         return $this->belongsTo(Equipment::class, 'equipment_id');
     }
+
+    protected function serializeDate(DateTimeInterface $date)
+    {
+        return $date->format("Y-m-d H:i:s");
+    }
+    protected $guarded = [];
+
 }

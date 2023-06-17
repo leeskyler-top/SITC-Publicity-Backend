@@ -43,6 +43,13 @@ class Controller extends BaseController
                 return response()->json(['msg' => $msg], $code);
             }
         }
+        if ($code == 400) {
+            if (!$msg) {
+                return response()->json(['msg' => "bad request"], $code);
+            } else {
+                return response()->json(['msg' => $msg], $code);
+            }
+        }
         if ($code == 422) {
             if (!$msg) {
                 return response()->json(['msg' => "data cannot be processed"], $code);

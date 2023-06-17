@@ -14,13 +14,16 @@ return new class extends Migration
         Schema::create('equipment_rents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('equipment_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('audit_id')->constrained('users')->cascadeOnDelete();
+            // 蠢货，字段名字和表明无关是这样写的 明白了吗？
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('audit_id');
+            $table->foreign('audit_id')->references('id')->on('users')->cascadeOnDelete();
+
             $table->text('assigned_url')->nullable();
             $table->text('returned_url')->nullable();
             $table->text('damaged_url')->nullable();
-            $table->enum('item_status', ['returned', 'assigned'])->nullable()->default('returned');
-            $table->enum('return_status', ['returned', 'assigned', 'damaged' , 'missed'])->nullable()->default('returned');
+            $table->enum('status', ['applying', 'returned', 'reject', 'assigned', 'damaged', 'missed'])->nullable()->default('returned');
         });
     }
 
