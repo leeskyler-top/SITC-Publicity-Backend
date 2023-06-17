@@ -19,7 +19,9 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->unsignedBigInteger('audit_id');
             $table->foreign('audit_id')->references('id')->on('users')->cascadeOnDelete();
-
+            $table->dateTime("apply_time")->nullable();
+            $table->dateTime("back_time")->nullable();
+            $table->dateTime("report_time")->nullable();
             $table->text('assigned_url')->nullable();
             $table->text('returned_url')->nullable();
             $table->text('damaged_url')->nullable();

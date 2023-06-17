@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Equipment;
-use App\Models\EquipmentAudit;
+use App\Models\EquipmentRent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -209,11 +210,77 @@ class EquipmentController extends Controller
     public function showMyEquipment($status)
     {
         $user = Auth::user();
+        $valid_status = ['applying', 'returned', 'reject', 'assigned', 'damaged', 'missed'];
+        if (!in_array($status, $valid_status)) {
+            return $this->jsonRes(404,'查询的状态不存在');
+        }
         $equipments =$user->equipmentRents()->where('status', $status)->get();
         return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', $equipments);
     }
 
+    // 列出空闲状态的设备
+    public function indexUnassignedEquipments()
+    {
+        $equipments = Equipment::where('status', 'unassigned')->get();
+        return $this->jsonRes(200, "列出所有空闲设备成功", $equipments);
+    }
+
     // 设备申请
+    public function equipmentApply(Request $request)
+    {
+        $data = $request->only([
+            'equipment_id',
+            'apply_time',
+            'assigned_url'
+        ]);
+        $validator = Validator::make($data, [
+            'equipment_id' => [
+                'required',
+                Rule::exists("equipments", 'id')->where("status", 'assigned')
+            ],
+            'apply_time' => 'required|date_format:Y-m-d H:i|after:now',
+            'assigned_url' => 'required|array',
+            'assigned_url.*' => 'required|image'
+        ], [
+            'equipment.required' => '设备ID必填',
+            'equipment.exists' => '设备不存在或设备状态不符合要求',
+            'apply_time.required' => '申请归还时间必填',
+            'apply_time.after' => '不得早于当前时间',
+            'assigned_url' => '必须为数组',
+            'assigned_url.*' => '必须是图片'
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+
+        foreach ($data['assigned_url'] as $image) {
+            $path = Storage::putFile('images/assigned', $image);
+            $assignedUrls[] = asset('storage/' . $path);
+        }
+
+        $data['assigned_url'] = $assignedUrls;
+        $data['status'] = 'applying';
+        $equipment = EquipmentRent::create($data);
+        $equipment->refresh();
+        return $this->jsonRes(200, "设备申请成功", $equipment);
+    }
+    // 列出审批列表
+    public function indexAuditList($status)
+    {
+        $valid_status = ['applying', 'reject', 'damaged', 'missed'];
+        if (!in_array($status, $valid_status)) {
+            return $this->jsonRes(404,'查询的状态不存在');
+        }
+        $equipment_enrollments = EquipmentRent::where('status', $status)->get();
+        return $this->jsonRes(200, "审核列表获取成功", $equipment_enrollments);
+    }
+    // 设备审批
+//    public function auditApply($id)
+//    {
+//        if (!is_numeric($id)) {
+//            return $this->jsonRes(404, '设备未找到');
+//        }
+//    }
     // 设备归还
     // 延期申报
     // 设备异常报告
