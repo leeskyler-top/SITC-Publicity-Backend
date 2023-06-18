@@ -32,7 +32,9 @@ class EquipmentController extends Controller
         $data = $request->only([
             'fixed_assets_num',
             'name',
-            'model'
+            'model',
+            'status',
+            'create_time'
         ]);
 
         $validator = Validator::make($data, [
