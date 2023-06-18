@@ -238,12 +238,15 @@ class EquipmentController extends Controller
         return $this->jsonRes(200, '设备批量添加完成', $equipments);
     }
 
+    /*
+     * 用户功能
+     */
 
     // 我的设备
     public function showMyEquipment($status)
     {
         $user = Auth::user();
-        $valid_status = ['applying', 'returned', 'reject', 'assigned', 'damaged', 'missed'];
+        $valid_status = ['applying', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404,'查询的状态不存在');
         }
@@ -298,6 +301,145 @@ class EquipmentController extends Controller
         $equipment->refresh();
         return $this->jsonRes(200, "设备申请成功", $equipment);
     }
+
+    // 设备归还
+    public function back(Request $request, $equipment_id)
+    {
+        if (!is_numeric($equipment_id)) {
+            return $this->jsonRes(404, '试图查找的设备未找到');
+        }
+        $equipment = Equipment::find($equipment_id);
+        $user = Auth::user();
+        $application = $user->equipmentRents()->where(['equipment_id' => $equipment_id, 'status' => 'assigned'])->first();
+        if (!$equipment || $equipment->status !== 'assigned' || !$application) {
+            return $this->jsonRes(404, '试图查找的设备未找到');
+        }
+        $data = $request->only([
+            'returned_url'
+        ]);
+
+        $validator = Validator::make($data, [
+            'returned_url' => 'required|array',
+            'returned_url.*' => 'required|image'
+        ], [
+            'returned_url' => 'required|array',
+            'returned_url.*' => 'required|image'
+        ]);
+
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+
+        foreach ($data['returned_url'] as $image) {
+            $path = Storage::put('images/returned', $image);
+            $returnedUrls[] = $path;
+        }
+
+        $data['returned_url'] = $returnedUrls;
+        $equipment->status = 'unassigned';
+        $equipment->save();
+        $application->status = 'returned';
+        $application->returned_url = $data['returned_url'];
+        $application->save();
+
+        return $this->jsonRes(200, '设备归还成功', $application);
+
+    }
+
+    // 延期申报
+    public function delayApply(Request $request, $equipment_rent_application_id)
+    {
+        if (!is_numeric($equipment_rent_application_id)) {
+            return $this->jsonRes(404, '未找到此出借信息');
+        }
+        $user = Auth::user();
+        $application = $user->equipmentRents()->find($equipment_rent_application_id);
+        if (!$application || ($application->status === 'assigned' || $application->status === 'delayed')) {
+            return $this->jsonRes(404, '试图查找的设备未找到');
+        }
+        $data = $request->only([
+            'reason',
+            'apply_time'
+        ]);
+        $validator = Validator::make($data, [
+            'reason' => 'required',
+            'apply_time' => 'required|date_format:Y-m-d H:i|after:now'
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $data['equipment_rent_id'] = $application->id;
+        $data['user_id'] = $user->id;
+        $eda = EquipmentDelayApplication::create($data);
+        $eda->refresh();
+        return $this->jsonRes(200, "设备延期申请提交成功");
+    }
+
+    // 设备异常报告
+    public function reportEquipment(Request $request, $equipment_rent_application_id)
+    {
+        if (!is_numeric($equipment_rent_application_id)) {
+            return $this->jsonRes(404, '没有此出借ID');
+        }
+        $user = Auth::user();
+        $equipment_rent = $user->equipmentRents()->find($equipment_rent_application_id);
+        if (!$equipment_rent) {
+            return $this->jsonRes(404, '没有此出借ID');
+        }
+        $equipment = $equipment_rent->equipment;
+        if ($equipment->status !== 'assigned') {
+            return $this->jsonRes(400, '出借状态错误');
+        }
+        $data = $request->only([
+            'type',
+            'damaged_url'
+        ]);
+
+        $data = array_filter($data, function ($value) {
+            return !empty($value) || $value == 0;
+        });
+
+        $validator = Validator::make($data, [
+            'type' => 'required|in:damaged,missed',
+            'damaged_url' => [
+                Rule::requiredIf(function () use ($data) {
+                    return $data['type'] === 'damaged';
+                }),
+                'array'
+            ],
+            'damaged_url.*' => 'required|image',
+        ], [
+            'type.required' => '类型必须为damaged或missed',
+            'type.in' => '类型必须为damaged或missed',
+            'damaged_url.required' => '当类型为damaged时，此项目必填',
+            'damaged_url.array' => 'damaged_url必须为数组',
+            'damaged_url.*.required' => '至少有一个内容',
+            'damaged_url.*.image' => '内容必须为图片',
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $data['report_time'] = Carbon::now()->format('Y-m-d H:i:s');
+        if ($data['type'] === 'damaged') {
+            foreach ($data['damaged_url'] as $image) {
+                $path = Storage::put('images/assigned', $image);
+                $damagedUrls[] = $path;
+            }
+            $data['damaged_url'] = $damagedUrls;
+        }
+        if ($data['type'] === 'missed' && isset($data['damaged_url'])) {
+            unset($data['damaged_url']);
+        }
+
+        $equipment_rent->fill($data)->save();
+        $equipment->status = 'damaged';
+        $equipment->save();
+        return $this->jsonRes(200, '设备异常已报告成功', $equipment_rent);
+    }
+
+    /*
+     * 管理员功能
+     */
 
     // 列出审批列表
     public function indexApplicationList($status)
@@ -368,78 +510,6 @@ class EquipmentController extends Controller
         return $this->jsonRes(200, '此申请已被拒绝', $application);
     }
 
-    // 设备归还
-    public function back(Request $request, $equipment_id)
-    {
-        if (!is_numeric($equipment_id)) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
-        }
-        $equipment = Equipment::find($equipment_id);
-        $user = Auth::user();
-        $application = $user->equipmentRents()->where(['equipment_id' => $equipment_id, 'status' => 'assigned'])->first();
-        if (!$equipment || $equipment->status !== 'assigned' || !$application) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
-        }
-        $data = $request->only([
-            'returned_url'
-        ]);
-
-        $validator = Validator::make($data, [
-            'returned_url' => 'required|array',
-            'returned_url.*' => 'required|image'
-        ], [
-            'returned_url' => 'required|array',
-            'returned_url.*' => 'required|image'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->jsonRes(422, $validator->errors()->first());
-        }
-
-        foreach ($data['returned_url'] as $image) {
-            $path = Storage::put('images/returned', $image);
-            $returnedUrls[] = $path;
-        }
-
-        $data['returned_url'] = $returnedUrls;
-        $equipment->status = 'unassigned';
-        $equipment->save();
-        $application->status = 'returned';
-        $application->returned_url = $data['returned_url'];
-        $application->save();
-
-        return $this->jsonRes(200, '设备归还成功', $application);
-
-    }
-    // 延期申报
-    public function delayApply(Request $request, $equipment_rent_application_id)
-    {
-        if (!is_numeric($equipment_rent_application_id)) {
-            return $this->jsonRes(404, '未找到此出借信息');
-        }
-        $user = Auth::user();
-        $application = $user->equipmentRents()->find($equipment_rent_application_id);
-        if (!$application || ($application->status === 'assigned' || $application->status === 'delayed')) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
-        }
-        $data = $request->only([
-            'reason',
-            'apply_time'
-        ]);
-        $validator = Validator::make($data, [
-            'reason' => 'required',
-            'apply_time' => 'required|date_format:Y-m-d H:i|after:now'
-        ]);
-        if ($validator->fails()) {
-            return $this->jsonRes(422, $validator->errors()->first());
-        }
-        $data['equipment_rent_id'] = $application->id;
-        $data['user_id'] = $user->id;
-        $eda = EquipmentDelayApplication::create($data);
-        $eda->refresh();
-        return $this->jsonRes(200, "设备延期申请提交成功");
-    }
-
     // 列出待延期申报
     public function indexDelayApplication()
     {
@@ -481,6 +551,7 @@ class EquipmentController extends Controller
 
         return $this->jsonRes(200, '设备借用申请已延期', $eda);
     }
+
     // 拒绝延期
     public function rejectEquipmentDelayApplication($equipment_delay_id)
     {
@@ -498,72 +569,14 @@ class EquipmentController extends Controller
         return $this->jsonRes(200, '设备借用申请已延期', $eda);
     }
 
-    // 设备异常报告
-    public function reportEquipment(Request $request, $equipment_rent_application_id)
-    {
-        if (!is_numeric($equipment_rent_application_id)) {
-            return $this->jsonRes(404, '没有此出借ID');
-        }
-        $user = Auth::user();
-        $equipment_rent = $user->equipmentRents()->find($equipment_rent_application_id);
-        if (!$equipment_rent) {
-            return $this->jsonRes(404, '没有此出借ID');
-        }
-        $equipment = $equipment_rent->equipment;
-        if ($equipment->status !== 'assigned') {
-            return $this->jsonRes(400, '出借状态错误');
-        }
-        $data = $request->only([
-            'type',
-            'damaged_url'
-        ]);
-
-        $data = array_filter($data, function ($value) {
-            return !empty($value) || $value == 0;
-        });
-
-        $validator = Validator::make($data, [
-            'type' => 'required|in:damaged,missed',
-            'damaged_url' => [
-                Rule::requiredIf(function () use ($data) {
-                    return $data['type'] === 'damaged';
-                }),
-                'array'
-            ],
-            'damaged_url.*' => 'required|image',
-        ], [
-            'type.required' => '类型必须为damaged或missed',
-            'type.in' => '类型必须为damaged或missed',
-            'damaged_url.required' => '当类型为damaged时，此项目必填',
-            'damaged_url.array' => 'damaged_url必须为数组',
-            'damaged_url.*.required' => '至少有一个内容',
-            'damaged_url.*.image' => '内容必须为图片',
-        ]);
-        if ($validator->fails()) {
-            return $this->jsonRes(422, $validator->errors()->first());
-        }
-        $data['report_time'] = Carbon::now()->format('Y-m-d H:i:s');
-        if ($data['type'] === 'damaged') {
-            foreach ($data['damaged_url'] as $image) {
-                $path = Storage::put('images/assigned', $image);
-                $damagedUrls[] = $path;
-            }
-            $data['damaged_url'] = $damagedUrls;
-        }
-        if ($data['type'] === 'missed' && isset($data['damaged_url'])) {
-            unset($data['damaged_url']);
-        }
-
-        $equipment_rent->fill($data)->save();
-        $equipment->status = 'damaged';
-        $equipment->save();
-        return $this->jsonRes(200, '设备异常已报告成功', $equipment_rent);
-    }
-
     // 列出主动上报的设备异常
-    public function indexReports()
+    public function indexReports($status)
     {
-        $equipment_rents = EquipmentRent::where('status', 'damaged')->get();
+        $valid_status = ['damaged', 'missed'];
+        if (!in_array($status, $valid_status)) {
+            return $this->jsonRes(404, '状态不存在');
+        }
+        $equipment_rents = EquipmentRent::where('status', $status)->get();
         return $this->jsonRes(200, '获取上报的设备异常成功', $equipment_rents);
     }
 
