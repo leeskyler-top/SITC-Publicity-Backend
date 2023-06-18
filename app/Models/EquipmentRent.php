@@ -27,6 +27,11 @@ class EquipmentRent extends Model
         return $this->belongsTo(Equipment::class, 'equipment_id');
     }
 
+    public function equipmentDelayApplications()
+    {
+        return $this->hasMany(EquipmentDelayApplication::class);
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format("Y-m-d H:i:s");

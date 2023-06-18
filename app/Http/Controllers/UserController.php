@@ -245,4 +245,7 @@ class UserController extends Controller
 
         return $this->jsonRes(200, '用户批量添加完成', $users);
     }
+
+    // 通过姓名模糊搜索用户
+    // 通过姓名模糊搜索不在某个活动中的用户
 }

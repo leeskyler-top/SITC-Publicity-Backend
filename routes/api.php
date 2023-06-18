@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\EquipmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,11 @@ Route::middleware("auth:api")->group(function () {
         Route::post("/pwd/change", [UserController::class, 'changePwd']);
     });
     Route::apiResource("user", UserController::class)->only(['show']);
+    Route::prefix("/equipment")->group(function () {
+        Route::get("/my/{status}", [EquipmentController::class, 'showMyEquipment']);
+        Route::get("/apply/{equipment_id}", [EquipmentController::class, 'equipmentApply']);
+        Route::get("/delay-apply/{equipment_rent_application_id}", [EquipmentController::class, 'delayApply']);
+    });
 });
 Route::middleware("admin")->group(function () {
     Route::prefix("/user")->group(function () {
@@ -35,4 +41,25 @@ Route::middleware("admin")->group(function () {
         Route::get("/pwd/reset/{id}", [UserController::class, 'resetPwd']);
     });
     Route::apiResource("user", UserController::class)->only(['index', 'store', 'destroy', 'update']);
+    Route::prefix("/equipment")->group(function () {
+        Route::post("/batch/add", [EquipmentController::class, 'batchStore']);
+        Route::prefix("/list")->group(function () {
+            Route::get("/rent-history", [EquipmentController::class, 'indexRentHistory']);
+            Route::get("/report", [EquipmentController::class, 'indexReports']);
+            Route::get("/delay-application", [EquipmentController::class, 'indexDelayApplication']);
+            Route::get("/application/{status}", [EquipmentController::class, 'indexApplicationList']);
+            Route::get("/delay-application/{equipment_rent_application_id}", [EquipmentController::class, 'indexAllDelayApplicationByERID']);
+        });
+        Route::prefix("/audit")->group(function () {
+            Route::prefix("/rent-application")->group(function () {
+                Route::post("/agree/{equipment_rent_application_id}", [EquipmentController::class, 'agreeApplication']);
+                Route::post("/reject/{equipment_rent_application_id}", [EquipmentController::class, 'rejectApplication']);
+            });
+            Route::prefix("/delay-application")->group(function () {
+                Route::post("/agree/{equipment_delay_id}", [EquipmentController::class, 'agreeEquipmentDelayApplication']);
+                Route::post("/reject/{equipment_delay_id}", [EquipmentController::class, 'rejectEquipmentDelayApplication']);
+            });
+        });
+    });
+    Route::apiResource("equipment", EquipmentController::class);
 });
