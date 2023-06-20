@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\EquipmentDelayApplicationResource;
+use App\Http\Resources\EquipmentRentResource;
 use App\Models\Equipment;
 use App\Models\EquipmentDelayApplication;
 use App\Models\EquipmentRent;
@@ -251,7 +253,7 @@ class EquipmentController extends Controller
             return $this->jsonRes(404,'查询的状态不存在');
         }
         $equipments = $user->equipmentRents()->where('status', $status)->get();
-        return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', $equipments);
+        return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', EquipmentRentResource::collection($equipments));
     }
 
     // 列出空闲状态的设备
@@ -342,7 +344,7 @@ class EquipmentController extends Controller
         $application->returned_url = $data['returned_url'];
         $application->save();
 
-        return $this->jsonRes(200, '设备归还成功', $application);
+        return $this->jsonRes(200, '设备归还成功',  EquipmentRentResource::collection($application));
 
     }
 
@@ -434,7 +436,7 @@ class EquipmentController extends Controller
         $equipment_rent->fill($data)->save();
         $equipment->status = 'damaged';
         $equipment->save();
-        return $this->jsonRes(200, '设备异常已报告成功', $equipment_rent);
+        return $this->jsonRes(200, '设备异常已报告成功',  new EquipmentRentResource($equipment_rent));
     }
 
     /*
@@ -449,7 +451,7 @@ class EquipmentController extends Controller
             return $this->jsonRes(404,'查询的状态不存在');
         }
         $equipment_enrollments = EquipmentRent::where('status', $status)->get();
-        return $this->jsonRes(200, "审核列表获取成功", $equipment_enrollments);
+        return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
     }
 
     // 同意设备申请
@@ -486,7 +488,7 @@ class EquipmentController extends Controller
             $otherApplication->save();
         }
 
-        return $this->jsonRes(200, '此申请已通过', $application);
+        return $this->jsonRes(200, '此申请已通过');
     }
 
     // 拒绝设备申请
@@ -507,14 +509,14 @@ class EquipmentController extends Controller
         $application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
         $application->save();
 
-        return $this->jsonRes(200, '此申请已被拒绝', $application);
+        return $this->jsonRes(200, '此申请已拒绝');
     }
 
     // 列出待延期申报
     public function indexDelayApplication()
     {
         $eda = EquipmentDelayApplication::where(['status' => 'delay-applying'])->get();
-        return $this->jsonRes(200, '列出所有待延期申请成功', $eda);
+        return $this->jsonRes(200, '列出所有待延期申请成功', EquipmentDelayApplicationResource::collection($eda));
     }
 
     // 列出此设备申请的所有延期申报
@@ -528,7 +530,7 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '没有此出借ID');
         }
         $eda = $equipment_rent->equipmentDelayApplications;
-        return $this->jsonRes(200, '获取此设备申请ID的延期申请成功', $eda);
+        return $this->jsonRes(200, '获取此设备申请ID的延期申请成功', EquipmentDelayApplicationResource::collection($eda));
     }
 
     // 同意延期
@@ -549,7 +551,7 @@ class EquipmentController extends Controller
         $eda->equipmentRent->apply_time = $eda->apply_time;
         $eda->equipmentRent->save();
 
-        return $this->jsonRes(200, '设备借用申请已延期', $eda);
+        return $this->jsonRes(200, '设备借用申请已延期');
     }
 
     // 拒绝延期
@@ -566,7 +568,7 @@ class EquipmentController extends Controller
         $eda->status = 'rejected';
         $eda->save();
 
-        return $this->jsonRes(200, '设备借用申请已延期', $eda);
+        return $this->jsonRes(200, '已拒绝延期申请');
     }
 
     // 列出主动上报的设备异常
@@ -577,13 +579,13 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '状态不存在');
         }
         $equipment_rents = EquipmentRent::where('status', $status)->get();
-        return $this->jsonRes(200, '获取上报的设备异常成功', $equipment_rents);
+        return $this->jsonRes(200, '获取上报的设备异常成功', EquipmentRentResource::collection($equipment_rents));
     }
 
     // 设备出借历史
     public function indexRentHistory()
     {
         $equipment_rent = EquipmentRent::all();
-        return $this->jsonRes(200, '获取设备出借历史成功', $equipment_rent);
+        return $this->jsonRes(200, '获取设备出借历史成功', EquipmentRentResource::collection($equipment_rent));
     }
 }

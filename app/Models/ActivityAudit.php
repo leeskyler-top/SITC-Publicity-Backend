@@ -10,6 +10,7 @@ class ActivityAudit extends Model
 {
     use HasFactory;
 
+    protected $hidden = ['user_id', 'audit_id'];
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format("Y-m-d H:i:s");

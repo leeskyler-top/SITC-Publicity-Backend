@@ -31,4 +31,6 @@ class EquipmentDelayApplication extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['equipment_rent_id', 'user_id', 'audit_id'];
+
 }

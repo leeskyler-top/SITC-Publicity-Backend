@@ -25,6 +25,6 @@ class CheckInUser extends Model
         return $date->format("Y-m-d H:i:s");
     }
     protected $guarded = [];
-
+    protected $hidden = ['check_in_id', 'user_id'];
 
 }

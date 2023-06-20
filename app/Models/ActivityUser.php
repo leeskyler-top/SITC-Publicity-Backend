@@ -10,6 +10,8 @@ class ActivityUser extends Model
 {
     use HasFactory;
 
+    protected $hidden = ['user_id', 'audit_id'];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
