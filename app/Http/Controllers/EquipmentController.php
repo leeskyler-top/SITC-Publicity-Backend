@@ -248,9 +248,18 @@ class EquipmentController extends Controller
     public function showMyEquipment($status)
     {
         $user = Auth::user();
-        $valid_status = ['applying', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed'];
+        $valid_status = ['applying', 'using', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404,'查询的状态不存在');
+        }
+        if ($status === 'using') {
+            $equipments = $user->equipmentRents()->where(function ($query) {
+                $query->where('status', 'delay')
+                    ->orWhere('status', 'assigned')
+                    ->orWhere('status', 'delay-applying')
+                    ->orWhere('status', 'delayed');
+            })->get();
+            return $this->jsonRes(200,'获取我的设备列表成功' . '('.$status.')', EquipmentRentResource::collection($equipments));
         }
         $equipments = $user->equipmentRents()->where('status', $status)->get();
         return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', EquipmentRentResource::collection($equipments));
@@ -434,7 +443,7 @@ class EquipmentController extends Controller
         }
 
         $equipment_rent->fill($data)->save();
-        $equipment->status = 'damaged';
+        $equipment->status = $data['type'];
         $equipment->save();
         return $this->jsonRes(200, '设备异常已报告成功',  new EquipmentRentResource($equipment_rent));
     }
@@ -446,7 +455,7 @@ class EquipmentController extends Controller
     // 列出审批列表
     public function indexApplicationList($status)
     {
-        $valid_status = ['applying', 'reject', 'damaged', 'missed'];
+        $valid_status = ['applying', 'delay-applying', 'rejected', 'assigned'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404,'查询的状态不存在');
         }

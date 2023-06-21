@@ -31,7 +31,8 @@ Route::middleware("auth:api")->group(function () {
     Route::apiResource("user", UserController::class)->only(['show']);
     Route::prefix("/equipment")->group(function () {
         Route::get("/my/{status}", [EquipmentController::class, 'showMyEquipment']);
-        Route::get("/apply/{equipment_id}", [EquipmentController::class, 'equipmentApply']);
+        Route::post("/apply/{equipment_id}", [EquipmentController::class, 'equipmentApply']);
+        Route::post("/report/{equipment_id}", [EquipmentController::class, 'reportEquipment']);
         Route::get("/delay-apply/{equipment_rent_application_id}", [EquipmentController::class, 'delayApply']);
     });
 });
