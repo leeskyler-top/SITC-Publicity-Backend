@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string("fixed_assets_num");
             $table->string("name");
             $table->string("model");
-            $table->enum("status", ['unassigned', 'assigned', 'damaged', 'missed'])->default('unassigned');
+            $table->enum("status", ['unassigned', 'assigned', 'damaged', 'missed', 'scrapped'])->default('unassigned');
             $table->dateTime("create_time");
             $table->timestamps();
             $table->softDeletes();

@@ -43,7 +43,7 @@ class EquipmentController extends Controller
             'fixed_assets_num' => 'required',
             'name' => 'required',
             'model' => 'required',
-            'status' => 'required|in:damaged,unassigned',
+            'status' => 'required|in:damaged,unassigned,scrapped',
             'create_time' => 'required|date_format:Y-m-d H:i:s'
         ], [
             'fixed_assets_num' => '固定资产编号必填',
@@ -105,7 +105,7 @@ class EquipmentController extends Controller
             'fixed_assets_num' => 'nullable|string',
             'name' => 'nullable|string',
             'model' => 'nullable|string',
-            'status' => 'nullable|in:damaged,assigned,unassigned',
+            'status' => 'nullable|in:damaged,assigned,unassigned,scrapped',
             'user_id' => [
                 Rule::requiredIf(function () use ($data) {
                     return $data['status'] === 'assigned';
@@ -187,8 +187,8 @@ class EquipmentController extends Controller
             'fixed_assets_num' => 'required|string',
             'name' => 'required|string',
             'model' => 'required|string',
-            'status' => 'required|in:damaged,unassigned',
-            'create_time' => 'required|date_format:Y-m-d H:i:s'
+            'status' => 'required|in:damaged,unassigned,scrapped',
+            'create_time' => 'required|date_format:Y-m-d H:i'
         ];
 
         DB::beginTransaction();
@@ -211,22 +211,19 @@ class EquipmentController extends Controller
                     'fixed_assets_num' => '固定资产编号必须为字符串',
                     'name' => '设备名称必须为字符串',
                     'model' => '模型必须为字符串',
-                    'status' => '状态必须为空闲或受损',
+                    'status' => '状态必须为空闲或受损或已报废',
                     'create_time' => '入库时间必须为时间'
                 ]);
                 if ($validator->fails()) {
                     DB::rollBack();
-                    return $this->jsonRes(400, $validator->errors()->first());
+                    return $this->jsonRes(400, $validator->errors());
                 }
                 $equipment = Equipment::create([
-                    'is_admin' => $element[0],
-                    'uid' => $element[1],
-                    'name' => $element[2],
-                    'email' => $element[3],
-                    'password' => $element[4],
-                    'department' => $element[5],
-                    'classname' => $element[6],
-                    'note' => $element[7],
+                    'fixed_assets_num' => $element[0],
+                    'name' => $element[1],
+                    'model' => $element[2],
+                    'status' => $element[3],
+                    'create_time' => $element[4]
                 ]);
                 $equipment->refresh();
                 $equipments[] = $equipment;
@@ -248,7 +245,7 @@ class EquipmentController extends Controller
     public function showMyEquipment($status)
     {
         $user = Auth::user();
-        $valid_status = ['applying', 'using', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed'];
+        $valid_status = ['applying', 'using', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed', 'scrapped'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404,'查询的状态不存在');
         }
