@@ -94,21 +94,25 @@ class EquipmentController extends Controller
             'fixed_assets_num',
             'name',
             'model',
-            'status'
+            'status',
+            'create_time',
+            'user_id',
+            'apply_time'
         ]);
-
         $data = array_filter($data, function ($value) {
-            return !empty($value) || $value == 0;
+            return !empty($value) || $value === 0;
         });
-
         $validator = Validator::make($data, [
             'fixed_assets_num' => 'nullable|string',
             'name' => 'nullable|string',
             'model' => 'nullable|string',
-            'status' => 'nullable|in:damaged,assigned,unassigned,scrapped',
+            'status' => 'nullable|in:missed,damaged,assigned,unassigned,scrapped',
+            'create_time' => 'nullable|date_format:Y-m-d H:i:s|before:now',
             'user_id' => [
                 Rule::requiredIf(function () use ($data) {
-                    return $data['status'] === 'assigned';
+                    if (isset($data['status'])) {
+                        return $data['status'] === 'assigned';
+                    }
                 }),
                 Rule::exists('users', 'id')->where(function ($query) {
                     $query->where('deleted_at', null);
@@ -116,10 +120,12 @@ class EquipmentController extends Controller
             ],
             'apply_time' => [
                 Rule::requiredIf(function () use ($data) {
-                    return $data['status'] === 'assigned';
+                    if (isset($data['status'])) {
+                        return $data['status'] === 'assigned';
+                    }
                 }),
-                'date_format' => 'Y-m-d H:i:s',
-                'after:now'
+                'date_format:Y-m-d H:i:s',
+                'after:yesterday'
             ]
         ], [
             'fixed_assets_num' => '固定资产编号必须为字符串',
@@ -128,14 +134,22 @@ class EquipmentController extends Controller
             'status' => '状态必须为空闲或已分配或受损',
             'user_id' => '当状态为已分配，必须分配用户',
             'apply_time' => '当状态为已分配，必须为用户填写承诺归还时间，并且时间合法',
-            'create_time' => '入库时间必须为时间'
+            'create_time' => '入库时间必须为合法时间'
         ]);
 
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-
-        if ($data['status'] === 'assigned') {
+        $equipment_apply_exists = Equipment::find($id)->equipmentRents()->where(function ($query) {
+            $query->where('status', 'delay')
+                ->orWhere('status', 'assigned')
+                ->orWhere('status', 'delay-applying')
+                ->orWhere('status', 'delayed');
+        })->exists();
+        if (isset($data['status']) && $data['status'] === 'assigned' && $equipment_apply_exists) {
+            return $this->jsonRes(400, "设备使用中，不可分配。");
+        }
+        if (isset($data['status']) && $data['status'] === 'assigned' && !$equipment_apply_exists) {
             EquipmentRent::create([
                 'equipment_id' => $equipment->id,
                 'user_id' => $data['user_id'],
@@ -145,10 +159,27 @@ class EquipmentController extends Controller
                 'status' => 'assigned'
             ]);
         }
-        if (isset($data['user_id'])) {
-            unset($data['user_id']);
+        if (isset($data['status']) && $data['status'] !== 'assigned' && $equipment_apply_exists) {
+            $equipment_applies = Equipment::find($id)->equipmentRents()->where(function ($query) {
+                $query->where('status', 'delay')
+                    ->orWhere('status', 'assigned')
+                    ->orWhere('status', 'delay-applying')
+                    ->orWhere('status', 'delayed');
+            })->get();
+            if ($data['status'] === 'unassigned') {
+                $status = 'returned';
+            } else {
+                $status = $data['status'];
+            }
+            foreach ($equipment_applies as $equipment_apply) {
+                $equipment_apply->status = $status;
+                $equipment_apply->save();
+            }
         }
-        $equipment->fill($data)->refresh();
+        unset($data['user_id']);
+        unset($data['apply_time']);
+
+        $equipment->fill($data)->save();
         return $this->jsonRes(200, "修改成功", $equipment);
     }
 
@@ -282,7 +313,7 @@ class EquipmentController extends Controller
                 'required',
                 Rule::exists("equipments", 'id')->where("status", 'unassigned')
             ],
-            'apply_time' => 'required|date_format:Y-m-d H:i|after:now',
+            'apply_time' => 'required|date_format:Y-m-d H:i:s|after:now',
             'assigned_url' => 'required|array',
             'assigned_url.*' => 'required|image'
         ], [
@@ -371,7 +402,7 @@ class EquipmentController extends Controller
         ]);
         $validator = Validator::make($data, [
             'reason' => 'required',
-            'apply_time' => 'required|date_format:Y-m-d H:i|after:now'
+            'apply_time' => 'required|date_format:Y-m-d H:i:s|after:now'
         ]);
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
@@ -404,7 +435,7 @@ class EquipmentController extends Controller
         ]);
 
         $data = array_filter($data, function ($value) {
-            return !empty($value) || $value == 0;
+            return !empty($value) || $value === 0;
         });
 
         $validator = Validator::make($data, [

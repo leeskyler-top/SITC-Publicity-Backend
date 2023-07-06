@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('returned_url')->nullable();
             $table->text('damaged_url')->nullable();
             $table->enum('status', ['applying', 'delay-applying', 'delayed', 'returned', 'rejected', 'assigned', 'damaged', 'missed'])->nullable()->default('returned');
+            $table->timestamps();
         });
     }
 
