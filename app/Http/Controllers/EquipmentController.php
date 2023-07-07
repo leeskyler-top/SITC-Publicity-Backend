@@ -50,7 +50,7 @@ class EquipmentController extends Controller
             'name' => '设备名称必填',
             'model' => '模型必填',
             'status' => '状态必须为空闲或受损',
-            'create_time' => '入库时间必填'
+            'create_time' => '入库时间必须为合法时间'
         ]);
 
         if ($validator->fails()) {
@@ -74,6 +74,12 @@ class EquipmentController extends Controller
         if (!$equipment) {
             return $this->jsonRes(404, '设备未找到');
         }
+        $equipment->assigned_rent = new EquipmentRentResource($equipment->equipmentRents()->where(function ($query) {
+            $query->where('status', 'delay')
+                ->orWhere('status', 'assigned')
+                ->orWhere('status', 'delay-applying')
+                ->orWhere('status', 'delayed');
+        })->first());
         return $this->jsonRes(200, '设备查找成功', $equipment);
     }
 
@@ -107,7 +113,7 @@ class EquipmentController extends Controller
             'name' => 'nullable|string',
             'model' => 'nullable|string',
             'status' => 'nullable|in:missed,damaged,assigned,unassigned,scrapped',
-            'create_time' => 'nullable|date_format:Y-m-d H:i:s|before:now',
+            'create_time' => 'nullable|date_format:Y-m-d H:i:s|before:tomorrow',
             'user_id' => [
                 Rule::requiredIf(function () use ($data) {
                     if (isset($data['status'])) {
@@ -195,10 +201,10 @@ class EquipmentController extends Controller
         if (!$equipment) {
             return $this->jsonRes(404, '设备未找到');
         } else if ($equipment->status === 'assigned') {
-            return $this->jsonRes(400, '错误的请求：设备正在使用中');
+            return $this->jsonRes(400, '设备正在使用中');
         } else {
             $equipment->delete();
-            return $this->jsonRes(200, null, "设备删除成功");
+            return $this->jsonRes(200, "设备删除成功");
         }
     }
 
@@ -238,7 +244,7 @@ class EquipmentController extends Controller
                     'model' => $element[2],
                     'status' => $element[3],
                     'create_time' => $element[4]
-                ], $validationRules,  [
+                ], $validationRules, [
                     'fixed_assets_num' => '固定资产编号必须为字符串',
                     'name' => '设备名称必须为字符串',
                     'model' => '模型必须为字符串',
@@ -262,7 +268,7 @@ class EquipmentController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['msg' => '在执行批量操作时发生严重错误，已回滚操作！'],500);
+            return response()->json(['msg' => '在执行批量操作时发生严重错误，已回滚操作！'], 500);
         }
 
         return $this->jsonRes(200, '设备批量添加完成', $equipments);
@@ -276,9 +282,9 @@ class EquipmentController extends Controller
     public function showMyEquipment($status)
     {
         $user = Auth::user();
-        $valid_status = ['applying', 'using', 'returned', 'reject', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed', 'scrapped'];
+        $valid_status = ['applying', 'using', 'returned', 'rejected', 'assigned', 'delay-applying', 'delayed', 'damaged', 'missed'];
         if (!in_array($status, $valid_status)) {
-            return $this->jsonRes(404,'查询的状态不存在');
+            return $this->jsonRes(404, '查询的状态不存在');
         }
         if ($status === 'using') {
             $equipments = $user->equipmentRents()->where(function ($query) {
@@ -287,10 +293,10 @@ class EquipmentController extends Controller
                     ->orWhere('status', 'delay-applying')
                     ->orWhere('status', 'delayed');
             })->get();
-            return $this->jsonRes(200,'获取我的设备列表成功' . '('.$status.')', EquipmentRentResource::collection($equipments));
+            return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
         }
         $equipments = $user->equipmentRents()->where('status', $status)->get();
-        return $this->jsonRes(200, '获取我的设备列表成功' . '('.$status.')', EquipmentRentResource::collection($equipments));
+        return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
     }
 
     // 列出空闲状态的设备
@@ -311,14 +317,13 @@ class EquipmentController extends Controller
         $validator = Validator::make($data, [
             'equipment_id' => [
                 'required',
-                Rule::exists("equipments", 'id')->where("status", 'unassigned')
-            ],
+                Rule::exists("equipment", 'id')->where("status", 'unassigned')],
             'apply_time' => 'required|date_format:Y-m-d H:i:s|after:now',
             'assigned_url' => 'required|array',
             'assigned_url.*' => 'required|image'
         ], [
-            'equipment.required' => '设备ID必填',
-            'equipment.exists' => '设备不存在或设备状态不符合要求',
+            'equipment_id.required' => '设备ID必填',
+            'equipment_id.exists' => '设备不存在或设备状态不符合要求',
             'apply_time.required' => '申请归还时间必填',
             'apply_time.after' => '不得早于当前时间',
             'assigned_url' => '必须为数组',
@@ -328,12 +333,19 @@ class EquipmentController extends Controller
             return $this->jsonRes(422, $validator->errors()->first());
         }
 
+        $apply_validator = Auth::user()->equipmentRents()->where(function ($query) use ($data) {
+            $query->where(['status' => 'applying', 'equipment_id' => $data['equipment_id']]);
+        })->exists();
+        if ($apply_validator) {
+            return $this->jsonRes(400,'您已申请此设备');
+        }
+
         foreach ($data['assigned_url'] as $image) {
             $path = Storage::put('images/assigned', $image);
             $assignedUrls[] = $path;
         }
 
-        $data['assigned_url'] = $assignedUrls;
+        $data['assigned_url'] = json_encode($assignedUrls);
         $data['status'] = 'applying';
         $data['user_id'] = Auth::id();
         $equipment = EquipmentRent::create($data);
@@ -381,7 +393,7 @@ class EquipmentController extends Controller
         $application->returned_url = $data['returned_url'];
         $application->save();
 
-        return $this->jsonRes(200, '设备归还成功',  EquipmentRentResource::collection($application));
+        return $this->jsonRes(200, '设备归还成功', EquipmentRentResource::collection($application));
 
     }
 
@@ -473,7 +485,7 @@ class EquipmentController extends Controller
         $equipment_rent->fill($data)->save();
         $equipment->status = $data['type'];
         $equipment->save();
-        return $this->jsonRes(200, '设备异常已报告成功',  new EquipmentRentResource($equipment_rent));
+        return $this->jsonRes(200, '设备异常已报告成功', new EquipmentRentResource($equipment_rent));
     }
 
     /*
@@ -485,7 +497,7 @@ class EquipmentController extends Controller
     {
         $valid_status = ['applying', 'delay-applying', 'rejected', 'assigned'];
         if (!in_array($status, $valid_status)) {
-            return $this->jsonRes(404,'查询的状态不存在');
+            return $this->jsonRes(404, '查询的状态不存在');
         }
         $equipment_enrollments = EquipmentRent::where('status', $status)->get();
         return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));

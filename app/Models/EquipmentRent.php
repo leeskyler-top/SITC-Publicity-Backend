@@ -36,6 +36,5 @@ class EquipmentRent extends Model
         return $date->format("Y-m-d H:i:s");
     }
     protected $guarded = [];
-    protected $hidden = ['equipment_rent_id', 'user_id', 'audit_id'];
-
+    protected $hidden = ['equipment_rent_id', 'equipment_id', 'user_id', 'audit_id'];
 }
