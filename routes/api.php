@@ -30,9 +30,8 @@ Route::middleware("auth:api")->group(function () {
     });
     Route::apiResource("user", UserController::class)->only(['show']);
     Route::prefix("/equipment")->group(function () {
-        Route::get("/unassigned", [EquipmentController::class, 'indexUnassignedEquipments']);
-        Route::post("/apply", [EquipmentController::class, 'equipmentApply']);
         Route::get("/my/{status}", [EquipmentController::class, 'showMyEquipment']);
+        Route::post("/apply/{equipment_id}", [EquipmentController::class, 'equipmentApply']);
         Route::post("/report/{equipment_id}", [EquipmentController::class, 'reportEquipment']);
         Route::get("/delay-apply/{equipment_rent_application_id}", [EquipmentController::class, 'delayApply']);
     });

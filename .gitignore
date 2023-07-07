@@ -46,9 +46,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-/public/images/assigned/*
-/public/images/back/*
-/public/images/damaged/*
 >>>>>>> 4e983f4 (initial commit)
 =======
 >>>>>>> 5c1442e7887084df5b3a0a5822eea5e824b8370c
