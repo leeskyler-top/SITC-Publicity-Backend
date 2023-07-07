@@ -145,15 +145,14 @@ class EquipmentController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-        $equipment_apply_exists = Equipment::find($id)->equipmentRents()->where(function ($query) {
-            $query->where('status', 'assigned')
-                ->orWhere('status', 'delay-applying')
-                ->orWhere('status', 'delayed');
-        })->exists();
-        if (isset($data['status']) && $data['status'] === 'assigned' && $equipment_apply_exists) {
+        $statuses = ['assigned', 'delay-applying', 'delayed'];
+        $equipment_application_exists = Equipment::find($id)->equipmentRents()->where('equipment_id', $equipment->id)
+            ->whereIn('status', $statuses)
+            ->exists();
+        if (isset($data['status']) && $data['status'] === 'assigned' && $equipment_application_exists) {
             return $this->jsonRes(400, "设备使用中，不可分配。");
         }
-        if (isset($data['status']) && $data['status'] === 'assigned' && !$equipment_apply_exists) {
+        if (isset($data['status']) && $data['status'] === 'assigned' && !$equipment_application_exists) {
             EquipmentRent::create([
                 'equipment_id' => $equipment->id,
                 'user_id' => $data['user_id'],
@@ -163,12 +162,10 @@ class EquipmentController extends Controller
                 'status' => 'assigned'
             ]);
         }
-        if (isset($data['status']) && $data['status'] !== 'assigned' && $equipment_apply_exists) {
-            $equipment_applications = Equipment::find($id)->equipmentRents()->where(function ($query) {
-                $query->where('status', 'assigned')
-                    ->orWhere('status', 'delay-applying')
-                    ->orWhere('status', 'delayed');
-            })->get();
+        if (isset($data['status']) && $data['status'] !== 'assigned' && $equipment_application_exists) {
+            $equipment_applications = Equipment::find($id)->equipmentRents()->where('equipment_id', $equipment->id)
+                ->whereIn('status', $statuses)
+                ->get();
             if ($data['status'] === 'unassigned') {
                 $status = 'returned';
             } else {
@@ -322,6 +319,7 @@ class EquipmentController extends Controller
             'equipment_id.exists' => '设备不存在或设备状态不符合要求',
             'apply_time.required' => '申请归还时间必填',
             'apply_time.after' => '不得早于当前时间',
+            'apply_time.date_format' => '日期格式不正确，必须为Y-m-d H:i:s',
             'assigned_url' => '必须为数组',
             'assigned_url.*' => '必须是图片'
         ]);
@@ -409,9 +407,14 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '未找到此出借信息');
         }
         $user = Auth::user();
-        $application = $user->equipmentRents()->find($equipment_rent_application_id);
-        if (!$application || ($application->status === 'assigned' || $application->status === 'delayed')) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
+        $statuses = ['assigned', 'delayed'];
+        $application= EquipmentRent::find($equipment_rent_application_id);
+        if (!$application) {
+            return $this->jsonRes(404, '试图查找的出借信息未找到');
+        }
+        $application_validator = EquipmentRent::where('id', $application->id)->whereIn('status', $statuses)->exists();
+        if (!$application_validator) {
+            return $this->jsonRes(404, '不是符合申请条件的出借信息');
         }
         $data = $request->only([
             'reason',
@@ -420,6 +423,9 @@ class EquipmentController extends Controller
         $validator = Validator::make($data, [
             'reason' => 'required',
             'apply_time' => 'required|date_format:Y-m-d H:i:s|after:now'
+        ], [
+            'reason' => '原因必填',
+            'apply_time' => '申请日期必填，并且时间必须合法',
         ]);
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
@@ -428,6 +434,8 @@ class EquipmentController extends Controller
         $data['user_id'] = $user->id;
         $eda = EquipmentDelayApplication::create($data);
         $eda->refresh();
+        $eda->equipmentRent->status = 'delay-applying';
+        $eda->equipmentRent->save();
         return $this->jsonRes(200, "设备延期申请提交成功");
     }
 
