@@ -64,7 +64,7 @@ PHP 8.2.3 以及以下PHP拓展:
     - 申请中、已归还、申请遭拒、申请延期、已延期、已上报的受损、已上报的丢失
 - [x] indexUnassignedEquipments 列出空闲状态的设备
 - [x] equipmentApply 设备申请
-- [ ] back 归还设备
+- [x] back 归还设备
 - [ ] delayApply 延期申报
 - [ ] reportEquipment 设备异常报告（丢失、损坏）
 
