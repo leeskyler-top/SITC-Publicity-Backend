@@ -1,32 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 5c1442e7887084df5b3a0a5822eea5e824b8370c
-/vendor/
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
-
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-
-# Laravel 5 & Lumen specific with changed public path
-public_html/storage
-public_html/hot
-
-storage/*.key
-.env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
-<<<<<<< HEAD
-=======
 /.phpunit.cache
 /node_modules
 /public/build
@@ -46,6 +17,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
->>>>>>> 4e983f4 (initial commit)
-=======
->>>>>>> 5c1442e7887084df5b3a0a5822eea5e824b8370c
+/public/files/images/assigned
+/public/files/images/back
+/public/files/images/damaged
