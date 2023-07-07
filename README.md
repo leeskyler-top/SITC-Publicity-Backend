@@ -60,18 +60,18 @@ PHP 8.2.3 以及以下PHP拓展:
 ### EquipmentController 设备控制器
 
 #### 用户功能
-- [ ] showMyEquipment 显示所有设备，分为不同的状态：
+- [x] showMyEquipment 显示所有设备，分为不同的状态：
     - 申请中、已归还、申请遭拒、申请延期、已延期、已上报的受损、已上报的丢失
-- [ ] indexUnassignedEquipments 列出空闲状态的设备
-- [ ] equipmentApply 设备申请
+- [x] indexUnassignedEquipments 列出空闲状态的设备
+- [x] equipmentApply 设备申请
 - [ ] back 归还设备
 - [ ] delayApply 延期申报
 - [ ] reportEquipment 设备异常报告（丢失、损坏）
 
 #### 管理员功能
-- [ ] index 列出所有未删除的设备
+- [x] index 列出所有未删除的设备
 - [x] store 添加设备
-- [ ] show 显示某个设备详情
+- [x] show 显示某个设备详情
 - [x] update 更新设备与设备状态，或手动将设备分配给用户
 - [x] destroy 删除某个设备（软删除）
 - [x] batchStore 使用csv批量添加设备
