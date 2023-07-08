@@ -66,7 +66,7 @@ PHP 8.2.3 以及以下PHP拓展:
 - [x] equipmentApply 设备申请
 - [x] back 归还设备
 - [x] delayApply 延期申报
-- [ ] reportEquipment 设备异常报告（丢失、损坏）
+- [x] reportEquipment 设备异常报告（丢失、损坏）
 
 #### 管理员功能
 - [x] index 列出所有未删除的设备

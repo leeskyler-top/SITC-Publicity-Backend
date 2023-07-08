@@ -467,7 +467,9 @@ class EquipmentController extends Controller
             'type' => 'required|in:damaged,missed',
             'damaged_url' => [
                 Rule::requiredIf(function () use ($data) {
-                    return $data['type'] === 'damaged';
+                    if (isset($data['type'])) {
+                        return $data['type'] === 'damaged';
+                    }
                 }),
                 'array'
             ],
@@ -486,7 +488,7 @@ class EquipmentController extends Controller
         $data['report_time'] = Carbon::now()->format('Y-m-d H:i:s');
         if ($data['type'] === 'damaged') {
             foreach ($data['damaged_url'] as $image) {
-                $path = Storage::put('images/assigned', $image);
+                $path = Storage::put('images/damaged', $image);
                 $damagedUrls[] = $path;
             }
             $data['damaged_url'] = json_encode($damagedUrls);
@@ -494,11 +496,12 @@ class EquipmentController extends Controller
         if ($data['type'] === 'missed' && isset($data['damaged_url'])) {
             unset($data['damaged_url']);
         }
-
+        $data['status'] = $data['type'];
+        unset($data['type']);
         $equipment_rent->fill($data)->save();
-        $equipment->status = $data['type'];
+        $equipment->status = $data['status'];
         $equipment->save();
-        return $this->jsonRes(200, '设备异常已报告成功', new EquipmentRentResource($equipment_rent));
+        return $this->jsonRes(200, '设备异常已报告成功');
     }
 
     /*
