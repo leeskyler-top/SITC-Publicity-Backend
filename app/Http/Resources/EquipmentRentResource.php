@@ -14,15 +14,19 @@ class EquipmentRentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $arr = [
             'id' => $this->id,
-            'equipment_fixed_assets_num' => $this->equipment->name,
-            'equipment_name' => $this->equipment->name,
-            'equipment_model' => $this->equipment->model,
+            'equipment_fixed_assets_num' => $this->whenLoaded('equipment', function () {
+                return $this->equipment->fixed_assets_num;
+            }),
+            'equipment_name' => $this->whenLoaded('equipment', function () {
+                return $this->equipment->name;
+            }),
+            'equipment_model' => $this->whenLoaded('equipment', function () {
+                return $this->equipment->model;
+            }),
             'user_uid' => $this->user->uid,
             'user_name' => $this->user->name,
-            'audit_uid' => $this->audit->uid,
-            'audit_name' => $this->audit->name,
             'audit_time' => $this->audit_time,
             'apply_time' => $this->apply_time,
             'back_time' => $this->back_time,
@@ -32,5 +36,13 @@ class EquipmentRentResource extends JsonResource
             'damaged_url' => $this->damaged_url,
             'status' => $this->status,
         ];
+        if (!$this->audit) {
+            $arr['audit_uid'] = null;
+            $arr['audit_name'] = null;
+        } else {
+            $arr['audit_uid'] = $this->audit->uid;
+            $arr['audit_name'] = $this->audit->name;
+        }
+        return $arr;
     }
 }

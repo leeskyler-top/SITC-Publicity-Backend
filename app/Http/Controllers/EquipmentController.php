@@ -197,6 +197,11 @@ class EquipmentController extends Controller
         } else if ($equipment->status === 'assigned') {
             return $this->jsonRes(400, '设备正在使用中');
         } else {
+            $equipment_applications = EquipmentRent::where(['equipment_id' => $equipment->id, 'status' => 'applying'])->get();
+            foreach ($equipment_applications as $equipment_application) {
+                $equipment_application->status = 'rejected';
+                $equipment_application->save();
+            }
             $equipment->delete();
             return $this->jsonRes(200, "设备删除成功");
         }
@@ -331,7 +336,7 @@ class EquipmentController extends Controller
             $query->where(['status' => 'applying', 'equipment_id' => $data['equipment_id']]);
         })->exists();
         if ($apply_validator) {
-            return $this->jsonRes(400,'您已申请此设备');
+            return $this->jsonRes(400, '您已申请此设备');
         }
 
         foreach ($data['assigned_url'] as $image) {
@@ -408,7 +413,7 @@ class EquipmentController extends Controller
         }
         $user = Auth::user();
         $statuses = ['assigned', 'delayed'];
-        $application= EquipmentRent::find($equipment_rent_application_id);
+        $application = EquipmentRent::find($equipment_rent_application_id);
         if (!$application) {
             return $this->jsonRes(404, '试图查找的出借信息未找到');
         }
@@ -511,11 +516,21 @@ class EquipmentController extends Controller
     // 列出审批列表
     public function indexApplicationList($status)
     {
-        $valid_status = ['applying', 'delay-applying', 'rejected', 'assigned'];
+        $valid_status = ['all', 'applying', 'rejected', 'assigned'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404, '查询的状态不存在');
         }
-        $equipment_enrollments = EquipmentRent::where('status', $status)->get();
+
+        if ($status === 'all') {
+            $equipment_enrollments = EquipmentRent::with('equipment')->where(function ($query) {
+                $query->whereIn('status', ['applying', 'rejected', 'assigned']);
+            })->get();
+
+            return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
+        }
+
+        $equipment_enrollments = EquipmentRent::with('equipment')->where('status', $status)->get();
+
         return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
     }
 
