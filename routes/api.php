@@ -55,12 +55,12 @@ Route::middleware("admin")->group(function () {
         });
         Route::prefix("/audit")->group(function () {
             Route::prefix("/rent-application")->group(function () {
-                Route::post("/agree/{equipment_rent_application_id}", [EquipmentController::class, 'agreeApplication']);
-                Route::post("/reject/{equipment_rent_application_id}", [EquipmentController::class, 'rejectApplication']);
+                Route::get("/agree/{equipment_rent_application_id}", [EquipmentController::class, 'agreeApplication']);
+                Route::get("/reject/{equipment_rent_application_id}", [EquipmentController::class, 'rejectApplication']);
             });
             Route::prefix("/delay-application")->group(function () {
-                Route::post("/agree/{equipment_delay_id}", [EquipmentController::class, 'agreeEquipmentDelayApplication']);
-                Route::post("/reject/{equipment_delay_id}", [EquipmentController::class, 'rejectEquipmentDelayApplication']);
+                Route::get("/agree/{equipment_delay_id}", [EquipmentController::class, 'agreeEquipmentDelayApplication']);
+                Route::get("/reject/{equipment_delay_id}", [EquipmentController::class, 'rejectEquipmentDelayApplication']);
             });
         });
     });

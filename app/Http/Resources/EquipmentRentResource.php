@@ -16,15 +16,9 @@ class EquipmentRentResource extends JsonResource
     {
         $arr = [
             'id' => $this->id,
-            'equipment_fixed_assets_num' => $this->whenLoaded('equipment', function () {
-                return $this->equipment->fixed_assets_num;
-            }),
-            'equipment_name' => $this->whenLoaded('equipment', function () {
-                return $this->equipment->name;
-            }),
-            'equipment_model' => $this->whenLoaded('equipment', function () {
-                return $this->equipment->model;
-            }),
+            'equipment_fixed_assets_num' => $this->loadMissing('equipment')->equipment->fixed_assets_num,
+            'equipment_name' => $this->loadMissing('equipment')->equipment->name,
+            'equipment_model' => $this->loadMissing('equipment')->equipment->model,
             'user_uid' => $this->user->uid,
             'user_name' => $this->user->name,
             'audit_time' => $this->audit_time,

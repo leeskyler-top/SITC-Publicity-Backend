@@ -75,9 +75,9 @@ PHP 8.2.3 以及以下PHP拓展:
 - [x] update 更新设备与设备状态，或手动将设备分配给用户
 - [x] destroy 删除某个设备（软删除）
 - [x] batchStore 使用csv批量添加设备
-- [ ] indexApplicationList 列出审批列表
-- [ ] agreeApplication 同意设备申请
-- [ ] rejectApplication 拒绝设备申请
+- [x] indexApplicationList 列出审批列表
+- [x] agreeApplication 同意设备申请
+- [x] rejectApplication 拒绝设备申请
 - [ ] indexDelayApplication 列出待延期申报
 - [ ] indexAllDelayApplicationByERID 列出此设备申请的所有延期申报（通过租借ID）
 - [ ] agreeEquipmentDelayApplication 同意延期

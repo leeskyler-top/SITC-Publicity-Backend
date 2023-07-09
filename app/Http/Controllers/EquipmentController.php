@@ -166,7 +166,7 @@ class EquipmentController extends Controller
             $equipment_applications = Equipment::find($id)->equipmentRents()->where('equipment_id', $equipment->id)
                 ->whereIn('status', $statuses)
                 ->get();
-            if ($data['status'] === 'unassigned') {
+            if ($data['status'] === 'unassigned' || $data['status'] === 'scrapped') {
                 $status = 'returned';
             } else {
                 $status = $data['status'];
@@ -200,6 +200,8 @@ class EquipmentController extends Controller
             $equipment_applications = EquipmentRent::where(['equipment_id' => $equipment->id, 'status' => 'applying'])->get();
             foreach ($equipment_applications as $equipment_application) {
                 $equipment_application->status = 'rejected';
+                $equipment_application->audit_id = Auth::id();
+                $equipment_application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
                 $equipment_application->save();
             }
             $equipment->delete();
@@ -286,14 +288,18 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '查询的状态不存在');
         }
         if ($status === 'using') {
-            $equipments = $user->equipmentRents()->where(function ($query) {
+            $equipments = $user->equipmentRents()->with(['equipment' => function ($query) {
+                $query->withTrashed();
+            }])->where(function ($query) {
                 $query->where('status', 'assigned')
                     ->orWhere('status', 'delay-applying')
                     ->orWhere('status', 'delayed');
             })->get();
             return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
         }
-        $equipments = $user->equipmentRents()->where('status', $status)->get();
+        $equipments = $user->equipmentRents()->with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }])->where('status', $status)->get();
         return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
     }
 
@@ -315,7 +321,7 @@ class EquipmentController extends Controller
         $validator = Validator::make($data, [
             'equipment_id' => [
                 'required',
-                Rule::exists("equipment", 'id')->where("status", 'unassigned')],
+                Rule::exists("equipment", 'id')->where("status", 'unassigned')->whereNull('deleted_at')],
             'apply_time' => 'required|date_format:Y-m-d H:i:s|after:now',
             'assigned_url' => 'required|array',
             'assigned_url.*' => 'required|image'
@@ -331,10 +337,11 @@ class EquipmentController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-
-        $apply_validator = Auth::user()->equipmentRents()->where(function ($query) use ($data) {
-            $query->where(['status' => 'applying', 'equipment_id' => $data['equipment_id']]);
-        })->exists();
+        $statuses = ['applying', 'assigned', 'delay-applying', 'delayed'];
+        $apply_validator = Auth::user()->equipmentRents()->with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }])->where('equipment_id', $data['equipment_id'])
+            ->whereIn('status', $statuses)->exists();
         if ($apply_validator) {
             return $this->jsonRes(400, '您已申请此设备');
         }
@@ -347,9 +354,9 @@ class EquipmentController extends Controller
         $data['assigned_url'] = json_encode($assignedUrls);
         $data['status'] = 'applying';
         $data['user_id'] = Auth::id();
-        $equipment = EquipmentRent::create($data);
-        $equipment->refresh();
-        return $this->jsonRes(200, "设备申请成功", $equipment);
+        $equipment_application = EquipmentRent::create($data);
+        $equipment_application->refresh();
+        return $this->jsonRes(200, "设备申请成功", new EquipmentRentResource($equipment_application));
     }
 
     // 设备归还
@@ -539,7 +546,7 @@ class EquipmentController extends Controller
     }
 
     // 同意设备申请
-    public function agreeApplication(Request $request, $equipment_application_id)
+    public function agreeApplication($equipment_application_id)
     {
         if (!is_numeric($equipment_application_id)) {
             return $this->jsonRes(404, '设备申请未找到');
@@ -566,17 +573,17 @@ class EquipmentController extends Controller
         // 拒绝其他申请
         $otherApplications = $equipment->equipmentRents()->where('status', 'applying')->where('id', '!=', $equipment_application_id)->get();
         foreach ($otherApplications as $otherApplication) {
-            $otherApplication->status = 'reject';
+            $otherApplication->status = 'rejected';
             $application->audit_id = Auth::id();
             $application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
             $otherApplication->save();
         }
 
-        return $this->jsonRes(200, '此申请已通过');
+        return $this->jsonRes(200, '已通过此申请');
     }
 
     // 拒绝设备申请
-    public function rejectApplication(Request $request, $equipment_application_id)
+    public function rejectApplication($equipment_application_id)
     {
         if (!is_numeric($equipment_application_id)) {
             return $this->jsonRes(404, '设备申请未找到');
@@ -588,12 +595,12 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '设备申请未找到');
         }
 
-        $application->status = 'reject';
+        $application->status = 'rejected';
         $application->audit_id = Auth::id();
         $application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
         $application->save();
 
-        return $this->jsonRes(200, '此申请已拒绝');
+        return $this->jsonRes(200, '已拒绝此申请');
     }
 
     // 列出待延期申报
