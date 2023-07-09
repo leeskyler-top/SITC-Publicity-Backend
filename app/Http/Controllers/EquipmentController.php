@@ -522,14 +522,18 @@ class EquipmentController extends Controller
         }
 
         if ($status === 'all') {
-            $equipment_enrollments = EquipmentRent::with('equipment')->where(function ($query) {
+            $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
+                $query->withTrashed();
+            }])->where(function ($query) {
                 $query->whereIn('status', ['applying', 'rejected', 'assigned']);
             })->get();
 
             return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
         }
 
-        $equipment_enrollments = EquipmentRent::with('equipment')->where('status', $status)->get();
+        $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }])->where('status', $status)->get();
 
         return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
     }
