@@ -49,9 +49,9 @@ Route::middleware("admin")->group(function () {
         Route::prefix("/list")->group(function () {
             Route::get("/rent-history", [EquipmentController::class, 'indexRentHistory']);
             Route::get("/report", [EquipmentController::class, 'indexReports']);
-            Route::get("/delay-application/{status}", [EquipmentController::class, 'indexDelayApplication']);
             Route::get("/application/{status}", [EquipmentController::class, 'indexApplicationList']);
-            Route::get("/delay-application/{equipment_rent_application_id}", [EquipmentController::class, 'indexAllDelayApplicationByERID']);
+            Route::get("/delay-application/{status}", [EquipmentController::class, 'indexDelayApplication']);
+            Route::get("/delay-application/search/{equipment_rent_application_id}", [EquipmentController::class, 'indexAllDelayApplicationByERID']);
         });
         Route::prefix("/audit")->group(function () {
             Route::prefix("/rent-application")->group(function () {

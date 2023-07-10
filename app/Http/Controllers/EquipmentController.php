@@ -657,7 +657,7 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '没有此出借ID');
         }
         $eda = $equipment_rent->equipmentDelayApplications;
-        return $this->jsonRes(200, '获取此设备申请ID的延期申请成功', EquipmentDelayApplicationResource::collection($eda));
+        return $this->jsonRes(200, '获取此设备申请ID的所有延期申请成功', EquipmentDelayApplicationResource::collection($eda));
     }
 
     // 同意延期
@@ -678,7 +678,7 @@ class EquipmentController extends Controller
         $eda->equipmentRent->apply_time = $eda->apply_time;
         $eda->equipmentRent->save();
 
-        return $this->jsonRes(200, '设备借用申请已延期');
+        return $this->jsonRes(200, '已延期此设备借用申请');
     }
 
     // 拒绝延期
@@ -695,7 +695,11 @@ class EquipmentController extends Controller
         $eda->status = 'rejected';
         $eda->save();
 
-        return $this->jsonRes(200, '已拒绝延期申请');
+        $eda->equipmentRent->status = 'assigned';
+        $eda->equipmentRent->apply_time = $eda->apply_time;
+        $eda->equipmentRent->save();
+
+        return $this->jsonRes(200, '已拒绝此延期申请');
     }
 
     // 列出主动上报的设备异常

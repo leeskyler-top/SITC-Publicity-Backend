@@ -80,9 +80,9 @@ PHP 8.2.3 以及以下PHP拓展:
 - [x] agreeApplication 同意设备申请
 - [x] rejectApplication 拒绝设备申请
 - [x] indexDelayApplication 列出待延期申报
-- [ ] indexAllDelayApplicationByERID 列出此设备申请的所有延期申报（通过租借ID）
-- [ ] agreeEquipmentDelayApplication 同意延期
-- [ ] rejectEquipmentDelayApplication 拒绝延期
+- [x] indexAllDelayApplicationByERID 列出此设备申请的所有延期申报（通过租借ID）
+- [x] agreeEquipmentDelayApplication 同意延期
+- [x] rejectEquipmentDelayApplication 拒绝延期
 - [ ] indexReports 列出主动上报的设备异常
 - [ ] indexRentHistory 设备出借历史
 
