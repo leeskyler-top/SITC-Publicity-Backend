@@ -47,6 +47,7 @@ PHP 8.2.3 以及以下PHP拓展:
 
 #### 管理员功能
 - [x] index 列出所有人
+- [x] show 查找某个设备的信息
 - [x] store 添加用户
 - [x] update 更新用户信息（含角色）
 - [x] destroy 删除用户（软删除）
@@ -78,7 +79,7 @@ PHP 8.2.3 以及以下PHP拓展:
 - [x] indexApplicationList 列出审批列表
 - [x] agreeApplication 同意设备申请
 - [x] rejectApplication 拒绝设备申请
-- [ ] indexDelayApplication 列出待延期申报
+- [x] indexDelayApplication 列出待延期申报
 - [ ] indexAllDelayApplicationByERID 列出此设备申请的所有延期申报（通过租借ID）
 - [ ] agreeEquipmentDelayApplication 同意延期
 - [ ] rejectEquipmentDelayApplication 拒绝延期
@@ -94,6 +95,7 @@ PHP 8.2.3 以及以下PHP拓展:
 #### 管理员功能
 - [ ] index 列出所有活动
 - [ ] show 显示活动具体信息
+- [ ] store 新增活动
 - [ ] update 更新活动信息
 - [ ] destroy 删除活动（软删除）
 - [ ] updateActicityUser 更新活动人员
@@ -108,6 +110,7 @@ PHP 8.2.3 以及以下PHP拓展:
 
 #### 管理员功能
 - [ ] index 列出所有活动
+- [ ] store 新增签到
 - [ ] show 显示签到具体信息
 - [ ] update 更新签到信息
 - [ ] destroy 删除活动（软删除）

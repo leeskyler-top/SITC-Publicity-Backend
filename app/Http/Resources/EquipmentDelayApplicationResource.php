@@ -14,15 +14,24 @@ class EquipmentDelayApplicationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
-            'equipment_rent_id' => $this->equipment_rent,
+
+        $arr = [
+            'id' => $this->id,
+            'equipment_rent_id' => $this->equipmentRent->id,
             'user_uid' => $this->user->uid,
             'user_name' => $this->user->name,
-            'audit_uid' => $this->audit->uid,
-            'audit_name' => $this->audit->name,
             'apply_time' => $this->apply_time,
             'reason' => $this->reason,
             'status' => $this->status,
         ];
+
+        if (!$this->audit) {
+            $arr['audit_uid'] = null;
+            $arr['audit_name'] = null;
+        } else {
+            $arr['audit_uid'] = $this->loadMissing('audit')->audit->uid;
+            $arr['audit_name'] = $this->loadMissing('audit')->audit->name;
+        }
+        return $arr;
     }
 }

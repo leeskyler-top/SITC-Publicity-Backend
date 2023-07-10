@@ -44,7 +44,7 @@ class EquipmentController extends Controller
             'name' => 'required',
             'model' => 'required',
             'status' => 'required|in:damaged,unassigned,scrapped',
-            'create_time' => 'required|date_format:Y-m-d H:i:s|before:tomorrow'
+            'create_time' => 'required|date_format:Y-m-d H:i:s|before:now'
         ], [
             'fixed_assets_num' => '固定资产编号必填',
             'name' => '设备名称必填',
@@ -74,11 +74,19 @@ class EquipmentController extends Controller
         if (!$equipment) {
             return $this->jsonRes(404, '设备未找到');
         }
-        $equipment->assigned_rent = new EquipmentRentResource($equipment->equipmentRents()->where(function ($query) {
+        if ($equipment->equipmentRents()->where(function ($query) {
             $query->where('status', 'assigned')
                 ->orWhere('status', 'delay-applying')
                 ->orWhere('status', 'delayed');
-        })->first());
+        })->exists()) {
+            $equipment->assigned_rent = new EquipmentRentResource($equipment->equipmentRents()->where(function ($query) {
+                $query->where('status', 'assigned')
+                    ->orWhere('status', 'delay-applying')
+                    ->orWhere('status', 'delayed');
+            })->first());
+        } else {
+            $equipment->assigned_rent = null;
+        }
         return $this->jsonRes(200, '设备查找成功', $equipment);
     }
 
@@ -112,7 +120,7 @@ class EquipmentController extends Controller
             'name' => 'nullable|string',
             'model' => 'nullable|string',
             'status' => 'nullable|in:missed,damaged,assigned,unassigned,scrapped',
-            'create_time' => 'nullable|date_format:Y-m-d H:i:s|before:tomorrow',
+            'create_time' => 'nullable|date_format:Y-m-d H:i:s|before:now',
             'user_id' => [
                 Rule::requiredIf(function () use ($data) {
                     if (isset($data['status'])) {
@@ -130,7 +138,7 @@ class EquipmentController extends Controller
                     }
                 }),
                 'date_format:Y-m-d H:i:s',
-                'after:yesterday'
+                'after:now'
             ]
         ], [
             'fixed_assets_num' => '固定资产编号必须为字符串',
@@ -226,7 +234,7 @@ class EquipmentController extends Controller
             'name' => 'required|string',
             'model' => 'required|string',
             'status' => 'required|in:damaged,unassigned,scrapped',
-            'create_time' => 'required|date_format:Y-m-d H:i|before:tomorrow'
+            'create_time' => 'required|date_format:Y-m-d H:i|before:now'
         ];
 
         DB::beginTransaction();
@@ -290,6 +298,10 @@ class EquipmentController extends Controller
         if ($status === 'using') {
             $equipments = $user->equipmentRents()->with(['equipment' => function ($query) {
                 $query->withTrashed();
+            }, 'user' => function ($query) {
+                $query->withTrashed();
+            }, 'audit' => function ($query) {
+                $query->withTrashed();
             }])->where(function ($query) {
                 $query->where('status', 'assigned')
                     ->orWhere('status', 'delay-applying')
@@ -298,6 +310,10 @@ class EquipmentController extends Controller
             return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
         }
         $equipments = $user->equipmentRents()->with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }, 'user' => function ($query) {
+            $query->withTrashed();
+        }, 'audit' => function ($query) {
             $query->withTrashed();
         }])->where('status', $status)->get();
         return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
@@ -339,6 +355,10 @@ class EquipmentController extends Controller
         }
         $statuses = ['applying', 'assigned', 'delay-applying', 'delayed'];
         $apply_validator = Auth::user()->equipmentRents()->with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }, 'user' => function ($query) {
+            $query->withTrashed();
+        }, 'audit' => function ($query) {
             $query->withTrashed();
         }])->where('equipment_id', $data['equipment_id'])
             ->whereIn('status', $statuses)->exists();
@@ -531,6 +551,10 @@ class EquipmentController extends Controller
         if ($status === 'all') {
             $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
                 $query->withTrashed();
+            }, 'user' => function ($query) {
+                $query->withTrashed();
+            }, 'audit' => function ($query) {
+                $query->withTrashed();
             }])->where(function ($query) {
                 $query->whereIn('status', ['applying', 'rejected', 'assigned']);
             })->get();
@@ -539,6 +563,10 @@ class EquipmentController extends Controller
         }
 
         $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }, 'user' => function ($query) {
+            $query->withTrashed();
+        }, 'audit' => function ($query) {
             $query->withTrashed();
         }])->where('status', $status)->get();
 
@@ -604,10 +632,18 @@ class EquipmentController extends Controller
     }
 
     // 列出待延期申报
-    public function indexDelayApplication()
+    public function indexDelayApplication($status)
     {
-        $eda = EquipmentDelayApplication::where(['status' => 'delay-applying'])->get();
-        return $this->jsonRes(200, '列出所有待延期申请成功', EquipmentDelayApplicationResource::collection($eda));
+        $statuses = ['all', 'delay-applying', 'delayed', 'rejected'];
+        if (!in_array($status, $statuses)) {
+            return $this->jsonRes(404, '状态不存在');
+        }
+        if ($status === 'all') {
+            $eda = EquipmentDelayApplication::whereIn('status', ['delay-applying', 'delayed', 'rejected'])->get();
+            return $this->jsonRes(200, '列出所有待延期申请成功', EquipmentDelayApplicationResource::collection($eda));
+        }
+        $eda = EquipmentDelayApplication::where(['status' => $status])->get();
+        return $this->jsonRes(200, '列出所有待延期申请成功' . '(' . $status . ')', EquipmentDelayApplicationResource::collection($eda));
     }
 
     // 列出此设备申请的所有延期申报

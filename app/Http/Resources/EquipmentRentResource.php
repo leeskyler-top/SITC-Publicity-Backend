@@ -19,8 +19,8 @@ class EquipmentRentResource extends JsonResource
             'equipment_fixed_assets_num' => $this->loadMissing('equipment')->equipment->fixed_assets_num,
             'equipment_name' => $this->loadMissing('equipment')->equipment->name,
             'equipment_model' => $this->loadMissing('equipment')->equipment->model,
-            'user_uid' => $this->user->uid,
-            'user_name' => $this->user->name,
+            'user_uid' => $this->loadMissing('user')->user->uid,
+            'user_name' => $this->loadMissing('user')->user->name,
             'audit_time' => $this->audit_time,
             'apply_time' => $this->apply_time,
             'back_time' => $this->back_time,
@@ -34,8 +34,8 @@ class EquipmentRentResource extends JsonResource
             $arr['audit_uid'] = null;
             $arr['audit_name'] = null;
         } else {
-            $arr['audit_uid'] = $this->audit->uid;
-            $arr['audit_name'] = $this->audit->name;
+            $arr['audit_uid'] = $this->loadMissing('audit')->audit->uid;
+            $arr['audit_name'] = $this->loadMissing('audit')->audit->name;
         }
         return $arr;
     }
