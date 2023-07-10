@@ -734,7 +734,13 @@ class EquipmentController extends Controller
     // 设备出借历史
     public function indexRentHistory()
     {
-        $equipment_rent = EquipmentRent::all();
+        $equipment_rent = EquipmentRent::with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }, 'user' => function ($query) {
+            $query->withTrashed();
+        }, 'audit' => function ($query) {
+            $query->withTrashed();
+        }])->get();
         return $this->jsonRes(200, '获取设备出借历史成功', EquipmentRentResource::collection($equipment_rent));
     }
 }

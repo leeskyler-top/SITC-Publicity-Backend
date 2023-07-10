@@ -83,8 +83,8 @@ PHP 8.2.3 以及以下PHP拓展:
 - [x] indexAllDelayApplicationByERID 列出此设备申请的所有延期申报（通过租借ID）
 - [x] agreeEquipmentDelayApplication 同意延期
 - [x] rejectEquipmentDelayApplication 拒绝延期
-- [ ] indexReports 列出主动上报的设备异常
-- [ ] indexRentHistory 设备出借历史
+- [x] indexReports 列出主动上报的设备异常
+- [x] indexRentHistory 设备出借历史
 
 ### ActivityController 活动控制器
 
