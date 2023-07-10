@@ -179,9 +179,15 @@ class EquipmentController extends Controller
             } else {
                 $status = $data['status'];
             }
-            foreach ($equipment_applications as $equipment_apply) {
-                $equipment_apply->status = $status;
-                $equipment_apply->save();
+            foreach ($equipment_applications as $equipment_application) {
+                $equipment_application->status = $status;
+                $application_delay_applications = $equipment_application->equipmentDelayApplications;
+                foreach ($application_delay_applications as $application_delay_application) {
+                    $application_delay_application->status = 'rejected';
+                    $application_delay_application->audit_id = Auth::id();
+                    $application_delay_application->save();
+                }
+                $equipment_application->save();
             }
         }
         unset($data['user_id']);
@@ -380,22 +386,18 @@ class EquipmentController extends Controller
     }
 
     // 设备归还
-    public function back(Request $request, $equipment_id)
+    public function back(Request $request, $equipment_rent_id)
     {
-        if (!is_numeric($equipment_id)) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
+        if (!is_numeric($equipment_rent_id)) {
+            return $this->jsonRes(404, '未找到符合条件的记录');
         }
-        $equipment = Equipment::find($equipment_id);
         $user = Auth::user();
-        if (!$equipment) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
-        }
         $statuses = ['assigned', 'delay-applying', 'delayed'];
-        $application_validator = $user->equipmentRents()->where('equipment_id', $equipment->id)
+        $application_validator = $user->equipmentRents()->where('id',  $equipment_rent_id)
             ->whereIn('status', $statuses)
             ->exists();
-        if (!$equipment || !$application_validator) {
-            return $this->jsonRes(404, '试图查找的设备未找到');
+        if (!$application_validator) {
+            return $this->jsonRes(404, '未找到符合条件的记录');
         }
         $data = $request->only([
             'returned_url'
@@ -417,18 +419,20 @@ class EquipmentController extends Controller
             $path = Storage::put('images/returned', $image);
             $returnedUrls[] = $path;
         }
-        // 理论上，一个设备只会有一个人在使用，为防止多人使用的Bug出现，使用get使每个出现的错误条目都变为相同状态。
-        $applications = $user->equipmentRents()->where('equipment_id', $equipment->id)
+        $application = $user->equipmentRents()->where('id',  $equipment_rent_id)
             ->whereIn('status', $statuses)
-            ->get();
+            ->first();
         $data['returned_url'] = json_encode($returnedUrls);
-        $equipment->status = 'unassigned';
-        $equipment->save();
-        foreach ($applications as $application) {
-            $application->status = 'returned';
-            $application->returned_url = $data['returned_url'];
-            $application->save();
+        $application->equipment->status = 'unassigned';
+        $application->equipment->save();
+        $application_delay_applications = $application->equipmentDelayApplications;
+        foreach ($application_delay_applications as $application_delay_application) {
+            $application_delay_application->status = 'rejected';
+            $application_delay_application->audit_id = Auth::id();
+            $application_delay_application->save();
         }
+        $data['status'] = 'returned';
+        $application->fill($data)->save();
         return $this->jsonRes(200, '设备归还成功');
     }
 
@@ -534,6 +538,14 @@ class EquipmentController extends Controller
         $equipment_rent->fill($data)->save();
         $equipment->status = $data['status'];
         $equipment->save();
+
+        $application_delay_applications = $equipment_rent->equipmentDelayApplications;
+        foreach ($application_delay_applications as $application_delay_application) {
+            $application_delay_application->status = 'rejected';
+            $application_delay_application->audit_id = Auth::id();
+            $application_delay_application->save();
+        }
+
         return $this->jsonRes(200, '设备异常已报告成功');
     }
 
@@ -571,7 +583,7 @@ class EquipmentController extends Controller
             $query->withTrashed();
         }])->where('status', $status)->get();
 
-        return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
+        return $this->jsonRes(200, "审核列表获取成功" . '(' . $status . ')', EquipmentRentResource::collection($equipment_enrollments));
     }
 
     // 同意设备申请
@@ -603,8 +615,8 @@ class EquipmentController extends Controller
         $otherApplications = $equipment->equipmentRents()->where('status', 'applying')->where('id', '!=', $equipment_application_id)->get();
         foreach ($otherApplications as $otherApplication) {
             $otherApplication->status = 'rejected';
-            $application->audit_id = Auth::id();
-            $application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
+            $otherApplication->audit_id = Auth::id();
+            $otherApplication->audit_time = Carbon::now()->format("Y-m-d H:i:s");
             $otherApplication->save();
         }
 
@@ -668,7 +680,7 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, "设备延期申请未找到");
         }
         $eda = EquipmentDelayApplication::find($equipment_delay_id);
-        if (!$eda || $eda->status !== 'delay-applying') {
+        if (!$eda || $eda->status !== 'delay-applying' || $eda->equipmentRent->status !== 'delay-applying') {
             return $this->jsonRes(404, "设备延期申请未找到");
         }
         $eda->audit_id = Auth::id();
@@ -692,15 +704,18 @@ class EquipmentController extends Controller
         if (!$eda || $eda->status !== 'delay-applying') {
             return $this->jsonRes(404, "设备延期申请未找到");
         }
+
         $eda->audit_id = Auth::id();
         $eda->status = 'rejected';
         $eda->save();
-
-        $eda->equipmentRent->status = 'assigned';
-        $eda->equipmentRent->apply_time = $eda->apply_time;
-        $eda->equipmentRent->save();
-
-        return $this->jsonRes(200, '已拒绝此延期申请');
+        if ($eda->equipmentRent->status === 'delay-applying') {
+            $eda->equipmentRent->status = 'assigned';
+            $eda->equipmentRent->apply_time = $eda->apply_time;
+            $eda->equipmentRent->save();
+            return $this->jsonRes(200, '已拒绝此延期申请');
+        } else {
+            return $this->jsonRes(200, '已拒绝此延期申请');
+        }
     }
 
     // 列出主动上报的设备异常
