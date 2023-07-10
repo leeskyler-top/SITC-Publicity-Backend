@@ -478,14 +478,15 @@ class EquipmentController extends Controller
             return $this->jsonRes(404, '没有此出借ID');
         }
         $user = Auth::user();
-        $equipment_rent = $user->equipmentRents()->find($equipment_rent_application_id);
-        if (!$equipment_rent) {
-            return $this->jsonRes(404, '没有此出借ID');
-        }
-        $equipment = $equipment_rent->equipment;
-        if ($equipment->status !== 'assigned') {
+        $statuses = ['assigned', 'delay-applying', 'delayed'];
+        $equipment_rent_validator = $user->equipmentRents()->where('id', $equipment_rent_application_id)
+            ->whereIn('status', $statuses)
+            ->exists();
+        if (!$equipment_rent_validator) {
             return $this->jsonRes(400, '出借状态错误');
         }
+        $equipment_rent = $user->equipmentRents()->find($equipment_rent_application_id);
+        $equipment = $equipment_rent->equipment;
         $data = $request->only([
             'type',
             'damaged_url'
@@ -705,12 +706,29 @@ class EquipmentController extends Controller
     // 列出主动上报的设备异常
     public function indexReports($status)
     {
-        $valid_status = ['damaged', 'missed'];
+        $valid_status = ['all', 'damaged', 'missed'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404, '状态不存在');
         }
-        $equipment_rents = EquipmentRent::where('status', $status)->get();
-        return $this->jsonRes(200, '获取上报的设备异常成功', EquipmentRentResource::collection($equipment_rents));
+        if ($status === 'all') {
+            $statuses = ['damaged', 'missed'];
+            $equipment_rents = EquipmentRent::with(['equipment' => function ($query) {
+                $query->withTrashed();
+            }, 'user' => function ($query) {
+                $query->withTrashed();
+            }, 'audit' => function ($query) {
+                $query->withTrashed();
+            }])->whereIn('status', $statuses)->get();
+            return $this->jsonRes(200, '获取上报的设备异常成功' . '(' . $status . ')', EquipmentRentResource::collection($equipment_rents));
+        }
+        $equipment_rents = EquipmentRent::with(['equipment' => function ($query) {
+            $query->withTrashed();
+        }, 'user' => function ($query) {
+            $query->withTrashed();
+        }, 'audit' => function ($query) {
+            $query->withTrashed();
+        }])->where('status', $status)->get();
+        return $this->jsonRes(200, '获取上报的设备异常成功' . '(' . $status . ')', EquipmentRentResource::collection($equipment_rents));
     }
 
     // 设备出借历史

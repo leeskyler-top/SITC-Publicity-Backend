@@ -48,7 +48,7 @@ Route::middleware("admin")->group(function () {
         Route::post("/batch/add", [EquipmentController::class, 'batchStore']);
         Route::prefix("/list")->group(function () {
             Route::get("/rent-history", [EquipmentController::class, 'indexRentHistory']);
-            Route::get("/report", [EquipmentController::class, 'indexReports']);
+            Route::get("/report/{status}", [EquipmentController::class, 'indexReports']);
             Route::get("/application/{status}", [EquipmentController::class, 'indexApplicationList']);
             Route::get("/delay-application/{status}", [EquipmentController::class, 'indexDelayApplication']);
             Route::get("/delay-application/search/{equipment_rent_application_id}", [EquipmentController::class, 'indexAllDelayApplicationByERID']);
