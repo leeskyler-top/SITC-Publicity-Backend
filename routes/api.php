@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Route;
 //    return $request->user();
 //});
 
+Route::options('/{any}', function () {
+    return response()->json(null, 200);
+})->where('any', '.*');
 
 Route::post("/auth/login", [AuthController::class, 'login']);
 Route::middleware("auth:api")->group(function () {

@@ -157,6 +157,7 @@ class EquipmentController extends Controller
         $equipment_application_exists = Equipment::find($id)->equipmentRents()->where('equipment_id', $equipment->id)
             ->whereIn('status', $statuses)
             ->exists();
+        $equipment_applying_application_exists = Equipment::find($id)->equipmentRents()->where(['equipment_id' => $equipment->id, 'status' => 'applying'])->exists();
         if (isset($data['status']) && $data['status'] === 'assigned' && $equipment_application_exists) {
             return $this->jsonRes(400, "设备使用中，不可分配。");
         }
@@ -169,6 +170,15 @@ class EquipmentController extends Controller
                 'apply_time' => $data['apply_time'],
                 'status' => 'assigned'
             ]);
+            if ($equipment_applying_application_exists) {
+                $equipment_applying_applications = Equipment::find($id)->equipmentRents()->where(['equipment_id' => $equipment->id, 'status' => 'applying'])->get();
+                foreach ($equipment_applying_applications as $equipment_applying_application) {
+                    $equipment_applying_application->audit_id = Auth::id();
+                    $equipment_applying_application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
+                    $equipment_applying_application->status = 'rejected';
+                    $equipment_applying_application->save();
+                }
+            }
         }
         if (isset($data['status']) && $data['status'] !== 'assigned' && $equipment_application_exists) {
             $equipment_applications = Equipment::find($id)->equipmentRents()->where('equipment_id', $equipment->id)
@@ -190,9 +200,17 @@ class EquipmentController extends Controller
                 $equipment_application->save();
             }
         }
+        if (isset($data['status']) && $data['status'] !== 'unassigned' && $data['status'] !== 'assigned' && $equipment_applying_application_exists) {
+            $equipment_applying_applications = Equipment::find($id)->equipmentRents()->where(['equipment_id' => $equipment->id, 'status' => 'applying'])->get();
+            foreach ($equipment_applying_applications as $equipment_applying_application) {
+                $equipment_applying_application->audit_id = Auth::id();
+                $equipment_applying_application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
+                $equipment_applying_application->status = 'rejected';
+                $equipment_applying_application->save();
+            }
+        }
         unset($data['user_id']);
         unset($data['apply_time']);
-
         $equipment->fill($data)->save();
         return $this->jsonRes(200, "修改成功", $equipment);
     }
