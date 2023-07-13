@@ -107,6 +107,9 @@ class UserController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
+        if (isset($data['is_admin']) && $data['is_admin'] === '0' && Auth::id() === $user->id) {
+            return $this->jsonRes(400, "出于系统安全相关的原因，不能取消自己的管理员权限");
+        }
         $user->fill($data)->save();
         $user->refresh();
         return $this->jsonRes(200, '变更成功', $user->makeHidden(['token']));
