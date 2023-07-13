@@ -196,7 +196,7 @@ class UserController extends Controller
             'classname' => 'required',
             'note' => 'nullable|string'
         ];
-
+        $users = [];
         DB::beginTransaction();
 
         try {
@@ -242,7 +242,9 @@ class UserController extends Controller
             DB::rollBack();
             return response()->json(['msg' => '在执行批量操作时发生严重错误，已回滚操作！'],500);
         }
-
+        if (!$users) {
+            return $this->jsonRes(422, '没有添加的用户');
+        }
         return $this->jsonRes(200, '用户批量添加完成', $users);
     }
 
