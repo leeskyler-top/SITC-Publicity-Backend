@@ -29,6 +29,7 @@ class EquipmentRentResource extends JsonResource
             'returned_url' => $this->returned_url,
             'damaged_url' => $this->damaged_url,
             'status' => $this->status,
+            'created_at' => $this->created_at,
         ];
         if (!$this->audit) {
             $arr['audit_uid'] = null;
