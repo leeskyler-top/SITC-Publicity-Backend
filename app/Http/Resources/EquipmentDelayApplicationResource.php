@@ -23,6 +23,7 @@ class EquipmentDelayApplicationResource extends JsonResource
             'apply_time' => $this->apply_time,
             'reason' => $this->reason,
             'status' => $this->status,
+            'created_at' => $this->created_at,
         ];
 
         if (!$this->audit) {

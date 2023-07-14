@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -41,6 +42,9 @@ class Handler extends ExceptionHandler
         });
         $this->renderable(function (TooManyRequestsHttpException $e) {
             return response()->json(['msg' => "请求过多"], 429);
+        });
+        $this->renderable(function (PostTooLargeException $e) {
+            return response()->json(['msg' => "上传的数据超出限制，文件限制10M"],413);
         });
     }
 }
