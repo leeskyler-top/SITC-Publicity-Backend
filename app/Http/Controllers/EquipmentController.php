@@ -326,7 +326,8 @@ class EquipmentController extends Controller
                 $query->withTrashed();
             }, 'audit' => function ($query) {
                 $query->withTrashed();
-            }])->where(function ($query) {
+            },
+            ])->orderBy('created_at', 'desc')->where(function ($query) {
                 $query->where('status', 'assigned')
                     ->orWhere('status', 'delay-applying')
                     ->orWhere('status', 'delayed');
@@ -339,7 +340,7 @@ class EquipmentController extends Controller
             $query->withTrashed();
         }, 'audit' => function ($query) {
             $query->withTrashed();
-        }])->where('status', $status)->get();
+        }])->orderBy('created_at', 'desc')->where('status', $status)->get();
         return $this->jsonRes(200, '获取我的设备列表成功' . '(' . $status . ')', EquipmentRentResource::collection($equipments));
     }
 
