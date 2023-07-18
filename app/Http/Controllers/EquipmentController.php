@@ -577,7 +577,7 @@ class EquipmentController extends Controller
     // 列出审批列表
     public function indexApplicationList($status)
     {
-        $valid_status = ['all', 'applying', 'rejected', 'assigned'];
+        $valid_status = ['all', 'applying', 'rejected', 'assigned', 'returned', 'damaged', 'missed'];
         if (!in_array($status, $valid_status)) {
             return $this->jsonRes(404, '查询的状态不存在');
         }
@@ -674,10 +674,10 @@ class EquipmentController extends Controller
         }
         if ($status === 'all') {
             $eda = EquipmentDelayApplication::whereIn('status', ['delay-applying', 'delayed', 'rejected'])->get();
-            return $this->jsonRes(200, '列出所有待延期申请成功', EquipmentDelayApplicationResource::collection($eda));
+            return $this->jsonRes(200, '列出所有延期申请成功', EquipmentDelayApplicationResource::collection($eda));
         }
         $eda = EquipmentDelayApplication::where(['status' => $status])->get();
-        return $this->jsonRes(200, '列出所有待延期申请成功' . '(' . $status . ')', EquipmentDelayApplicationResource::collection($eda));
+        return $this->jsonRes(200, '列出所有延期申请成功' . '(' . $status . ')', EquipmentDelayApplicationResource::collection($eda));
     }
 
     // 列出此设备申请的所有延期申报
