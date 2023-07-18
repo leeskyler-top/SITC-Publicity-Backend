@@ -260,7 +260,7 @@ class EquipmentController extends Controller
             'status' => 'required|in:damaged,unassigned,scrapped',
             'create_time' => 'required|date_format:Y-m-d H:i|before:now'
         ];
-
+        $equipments = [];
         DB::beginTransaction();
 
         try {
@@ -303,7 +303,9 @@ class EquipmentController extends Controller
             DB::rollBack();
             return response()->json(['msg' => '在执行批量操作时发生严重错误，已回滚操作！'], 500);
         }
-
+        if (!$equipments) {
+            return $this->jsonRes(422, '没有添加的设备');
+        }
         return $this->jsonRes(200, '设备批量添加完成', $equipments);
     }
 
