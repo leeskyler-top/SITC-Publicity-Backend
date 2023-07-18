@@ -23,8 +23,6 @@ class EquipmentDelayApplicationResource extends JsonResource
             'equipment_model' => $this->loadMissing('equipmentRent')->equipmentRent->loadMissing('equipment')->model,
             'user_uid' => $this->loadMissing('user')->user->uid,
             'user_name' => $this->loadMissing('user')->user->name,
-            'audit_uid' => $this->loadMissing('audit')->audit->uid,
-            'audit_name' => $this->loadMissing('audit')->audit->name,
             'apply_time' => $this->apply_time,
             'reason' => $this->reason,
             'status' => $this->status,
