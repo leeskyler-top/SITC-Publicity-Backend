@@ -217,6 +217,8 @@ cd SITC-Publicity-Backend
 mv ./* ../
 rm -rf SITC-Publicity-Backend
 composer install
+chown -R www-data:www-data ./*
+chmod -R 755 ./*
 ```
 依照env.example配置.env文件
 编辑完成后，生成base64盐（此步骤也需要联网）
