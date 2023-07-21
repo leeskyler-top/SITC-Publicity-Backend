@@ -596,6 +596,17 @@ class EquipmentController extends Controller
             return $this->jsonRes(200, "审核列表获取成功", EquipmentRentResource::collection($equipment_enrollments));
         }
 
+        if ($status !== 'applying') {
+            $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
+                $query->withTrashed();
+            }, 'user' => function ($query) {
+                $query->withTrashed();
+            }, 'audit' => function ($query) {
+                $query->withTrashed();
+            }])->orderBy('created_at', 'desc')->where('status', $status)->get();
+            return $this->jsonRes(200, "审核列表获取成功" . '(' . $status . ')', EquipmentRentResource::collection($equipment_enrollments));
+        }
+
         $equipment_enrollments = EquipmentRent::with(['equipment' => function ($query) {
             $query->withTrashed();
         }, 'user' => function ($query) {

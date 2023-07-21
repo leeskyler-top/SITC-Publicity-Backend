@@ -6,7 +6,7 @@ PHP 8.2.3 + Laravel 10
 ## 部署与项目更新
 
 ### 环境要求
-操作系统不限
+Ubuntu 20.04 或 CentOS 8 或 Windows Server 2019
 
 Nginx或Apache
 
@@ -27,6 +27,220 @@ PHP 8.2.3 以及以下PHP拓展:
 - Session PHP 扩展
 - Tokenizer PHP 扩展
 - XML PHP 扩展
+
+### 部署大致步骤
+
+#### 安装环境
+以Ubuntu 20.04为例
+
+##### 安装PHP 8.2
+在执行任何其他操作之前检查更新并安装它们。
+```
+sudo apt update && sudo apt -y upgrade
+```
+在更新后清理APT缓存。
+```
+sudo apt autoremove
+```
+重启。
+```
+reboot
+```
+在添加php8.2 apt镜像之前，安装一些依赖。
+```
+sudo apt update
+sudo apt install -y lsb-release gnupg2 ca-certificates apt-transport-https software-properties-common wget curl git
+```
+添加Surý镜像
+```
+sudo add-apt-repository ppa:ondrej/php
+sudo apt update
+```
+安装PHP8.2
+```
+sudo apt install php8.2 php8.2-fpm php8.2-curl php8.2-bz2 php8.2-xml php8.2-json php8.2-mysqli php8.2-zip php8.2-fileinfo php8.2-dom php8.2-opcache php8.2-mbstring php8.2-hash
+```
+
+##### 安装Nginx
+安装Nginx
+```
+apt install nginx
+```
+
+/var/www/html/xxx下目录结构（网站根目录）：
+- frontend (前端目录)
+- backend (后端目录)
+
+编辑配置（含SSL、前端）
+```
+vim /etc/nginx/sites-enabled/xxx.conf
+```
+示例配置
+```
+server {
+    listen 80;
+    server_name 域名;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name 域名;
+    root 网站根目录目录（不要写API目录或是前端目录）;
+
+    index index.php;
+
+    # SSL证书可以使用acme.sh 实施0成本申请、续期。
+    ssl_certificate #公钥地址;
+    ssl_certificate_key #私钥地址;
+
+    ssl_protocols TLSv1.2 TLSv1.3;  # 指定主流的 TLS 版本
+
+    location ^~ /backend/public/files/images/ {
+        deny all;
+    }
+
+    # 可选配置，使得一些HTTP状态码返回为JSON格式。
+    error_page 403 /403.json;
+    location = /403.json {
+        default_type application/json;
+        return 403 '{"code":"403","status":"error","msg":"拒绝访问 Forbidden."}';
+    }
+
+    error_page 404 /404.json;
+    location = /404.json {
+        default_type application/json;
+        return 404 '{"code":"404","status":"error","msg":"未找到 Not Found."}';
+    }
+
+    error_page 413 /413.json;
+    location = /413.json {
+        default_type application/json;
+        return 413 '{"code":"413","status":"error","msg":"数据大小受限 Content Too Large."}';
+    }
+
+    error_page 429 /429.json;
+    location = /429.json {
+        default_type application/json;
+        return 429 '{"code":"429","status":"error","msg":"请求过多 Too Many Request."}';
+    }
+
+    error_page 500 /500.json;
+    location = /500.json {
+        default_type application/json;
+        return 500 '{"code":"500","status":"error","msg":"服务器内部错误 Internal Server Error."}';
+    }
+
+    error_page 502 /502.json;
+    location = /502.json {
+        default_type application/json;
+    }
+
+    # 对API目录配置伪静态
+    location /backend/ {
+        try_files $uri $uri/ /backend/index.php?$query_string;
+    }
+
+    # 配置前端目录自动重定向。
+    location / {
+        root 前端目录;
+    }
+
+    # PHP8.2-FPM配置
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # 设置服务器最大支持的上传实体数据
+    client_max_body_size 20M;
+}
+
+```
+
+##### 安装MySQL 5.7
+添加MySQL镜像源
+```
+sudo apt update
+sudo apt install wget -y
+wget https://dev.mysql.com/get/mysql-apt-config_0.8.12-1_all.deb
+```
+运行下方命令后，选择Ubuntu Bionic，选择MySQL5.7，选择By Default，选择OK
+
+```
+sudo dpkg -i mysql-apt-config_0.8.12-1_all.deb
+```
+```
+sudo apt-get update
+```
+```
+sudo apt install -f mysql-client=5.7* mysql-community-server=5.7* mysql-server=5.7*
+```
+初始化配置MySQL，配置数据库、用户密码权限等信息，不做示例。
+```
+sudo mysql_secure_installation
+```
+
+##### 安装Composer 2
+注意尽量不要使用apt安装，默认安装的都是1，不是2！
+```
+cd ~
+curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+```
+获取最新签名。
+```
+HASH=`curl -sS https://composer.github.io/installer.sig`
+```
+执行下列PHP代码，确认安装器是完整的，可以运行的，执行下列命令后应返回Installer verified。
+```
+php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+```
+下载并安装composer。
+```
+php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+```
+查看composer是否安装成功，并查看版本号是否为2开头。
+```
+composer -V
+```
+
+##### 部署后端代码
+```
+cd #到你想要的网站目录
+```
+克隆项目，并安装composer依赖
+```
+git clone https://github.com/leeskyler-top/SITC-Publicity-Backend.git
+cd SITC-Publicity-Backend
+mv ./* ../
+rm -rf SITC-Publicity-Backend
+composer install
+```
+依照env.example配置.env文件
+编辑完成后，生成base64盐（此步骤也需要联网）
+```
+php artisan key:genreate
+```
+
+***
+
+## 数据迁移、备份
+登录服务器后，如果没有安装phpMyAdmin、Adminer、SQLyog(仅Windows系统)等图形化数据库操作界面，可以通过MySQL命令行操作。
+
+##### 备份
+```
+mysqldump -u 账户 -p 数据库名 > 你想要的路径/文件名.sql
+```
+
+##### 迁移
+```
+mysql -u 账户 -p
+CREATE DATABASE sitc_publicity;
+quit;
+mysql -u 账户 -p sitc_publicity < SQL文件所在路径
+```
 
 ***
 

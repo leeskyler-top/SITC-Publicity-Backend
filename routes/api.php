@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EquipmentController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +27,7 @@ Route::options('/{any}', function () {
 
 Route::post("/auth/login", [AuthController::class, 'login']);
 Route::middleware("auth:api")->group(function () {
+    Route::get('/files/images/{type}/{filename}', [FileController::class, 'normal']);
     Route::delete("/auth/logout", [AuthController::class, 'logout']);
     Route::prefix("/user")->group(function () {
         Route::post("/pwd/change", [UserController::class, 'changePwd']);
@@ -42,6 +43,7 @@ Route::middleware("auth:api")->group(function () {
     });
 });
 Route::middleware("admin")->group(function () {
+    Route::get('/files/admin/images/{type}/{filename}', [FileController::class, 'admin']);
     Route::prefix("/user")->group(function () {
         Route::post("/batch/add", [UserController::class, 'batchStore']);
         Route::get("/pwd/reset/{id}", [UserController::class, 'resetPwd']);
