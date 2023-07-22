@@ -270,7 +270,6 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 - [x] resetPwd 重置用户密码
 - [x] batchStore 批量添加用户
 - [ ] searchUserByName 通过姓名模糊搜索用户
-- [ ] searchUserNotInActivityByName 通过姓名模糊搜索不在某个活动中的用户
 
 
 
@@ -309,12 +308,13 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 - [ ] EnrollActivity 报名活动
 
 #### 管理员功能
-- [ ] index 列出所有活动
-- [ ] show 显示活动具体信息
-- [ ] store 新增活动
-- [ ] update 更新活动信息
-- [ ] destroy 删除活动（软删除）
-- [ ] updateActicityUser 更新活动人员
+- [x] index 列出所有活动
+- [x] show 显示活动具体信息
+- [x] store 新增活动
+- [x] update 更新活动信息
+- [x] destroy 删除活动（软删除）
+- [ ] removeUser 将某人从某个活动中移出
+- [ ] searchUserNotInActivityByName 通过姓名模糊搜索不在某个活动中的用户
 - [ ] listCheckIns 列出当前活动所有签到信息
 - [ ] AgreeActivityEnrollments 同意报名
 - [ ] RejectActivityEnrollments 拒绝报名
@@ -335,14 +335,9 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 
 
 ### MessageController 消息控制器
-- [ ] indexAllMsg
-- [ ] getCheckIningMsg
-- [ ] getCheckInRevokedMsg
-- [ ] getNewActivityMsg
-- [ ] getAgreedActivityEnrollmentMsg
-- [ ] getRejectedActivityEnrollmentMsg
-- [ ] getAssignedEquipmentMsg
-- [ ] getRejectedEquipmentMsg
+- [ ] getMyMsg 获取新消息
+- [ ] readMsg 已读某个消息
+- [ ] readAllMsg 全部已读
 
 
 ***

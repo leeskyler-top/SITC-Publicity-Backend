@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('admin_id');
             $table->foreign('admin_id')->references('id')->on("users");
             $table->string('title');
-            $table->enum('type', ['self-enrollment', 'enrollment', 'assigned'])->default('self-enrollment');
+            $table->string('place');
+            $table->enum('type', ['self-enrollment', 'ase', 'assignment'])->default('self-enrollment');
             $table->text('note');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
