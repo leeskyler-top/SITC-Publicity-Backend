@@ -269,8 +269,6 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 - [x] destroy 删除用户（软删除）
 - [x] resetPwd 重置用户密码
 - [x] batchStore 批量添加用户
-- [ ] searchUserByName 通过姓名模糊搜索用户
-
 
 
 ### EquipmentController 设备控制器
