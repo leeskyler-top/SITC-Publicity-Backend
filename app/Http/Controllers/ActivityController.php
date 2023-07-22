@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -185,5 +186,25 @@ class ActivityController extends Controller
         }
         $activity->users()->detach($user_id);
         return $this->jsonRes(200, "用户已移出");
+    }
+
+    public function searchUserNotInActivity(Request $request, $activity_id)
+    {
+        if (!is_numeric($activity_id)) {
+            return $this->jsonRes(404);
+        }
+        $activity = Activity::find($activity_id);
+        if (!$activity) {
+            return $this->jsonRes(404, '活动未找到');
+        }
+        $data = $request->only(['info']);
+
+        $activity_current_users = $activity->users()->pluck('user_id')->toArray(); // 获取已参与活动的用户ID数组
+        $users = User::where(function ($query) use ($data, $activity_current_users) {
+            $query->where('name', 'LIKE', '%' . $data['info'] . '%')
+                ->orWhere('uid', 'LIKE', '%' . $data['info'] . '%');
+        })->whereNotIn('id', $activity_current_users)
+            ->get();
+        return $this->jsonRes(200, "用户搜索成功", $users);
     }
 }

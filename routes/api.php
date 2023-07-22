@@ -72,6 +72,7 @@ Route::middleware("admin")->group(function () {
     });
     Route::apiResource("equipment", EquipmentController::class);
     Route::prefix("activity")->group(function () {
+        Route::post("/search/users/{activity_id}", [ActivityController::class, 'searchUserNotInActivity']);
         Route::delete("/remove/{activity_id}/{user_id}", [ActivityController::class, 'removeUser']);
     });
     Route::apiResource("activity", ActivityController::class);
