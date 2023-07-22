@@ -57,8 +57,8 @@ class ActivityController extends Controller
             ],
         ], [
             'title' => '标题必填',
-            'type.required' => '类型必填self-enrollment,assignment,ase中的一个',
-            'type.in' => '类型必须是',
+            'type.required' => '类型必填',
+            'type.in' => '类型必须是self-enrollment,assignment,ase中的一个',
             'place' => '地点必填',
             'note' => '需求必填',
             'start_time' => '开始时间必填，并且必须合法',
@@ -134,8 +134,8 @@ class ActivityController extends Controller
             ],
         ], [
             'title' => '标题必填',
-            'type.required' => '类型必填self-enrollment,assignment,ase中的一个',
-            'type.in' => '类型必须是',
+            'type.required' => '类型必填',
+            'type.in' => '类型必须是self-enrollment,assignment,ase中的一个',
             'place' => '地点必填',
             'note' => '需求必填',
             'start_time' => '开始时间必填，并且必须合法',

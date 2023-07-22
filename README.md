@@ -313,7 +313,7 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 - [x] store 新增活动
 - [x] update 更新活动信息
 - [x] destroy 删除活动（软删除）
-- [ ] removeUser 将某人从某个活动中移出
+- [x] removeUser 将某人从某个活动中移出
 - [ ] searchUserNotInActivityByName 通过姓名模糊搜索不在某个活动中的用户
 - [ ] listCheckIns 列出当前活动所有签到信息
 - [ ] AgreeActivityEnrollments 同意报名

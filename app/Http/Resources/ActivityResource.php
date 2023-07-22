@@ -15,13 +15,14 @@ class ActivityResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'type' => $this->type,
             'place' => $this->place,
             'note' => $this->note,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'users' => $this->users,
+            'users' => $this->users->makeHidden(['pivot', 'token']),
         ];
     }
 }
