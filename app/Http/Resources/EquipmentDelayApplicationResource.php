@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,7 +30,7 @@ class EquipmentDelayApplicationResource extends JsonResource
             'apply_time' => $this->apply_time,
             'reason' => $this->reason,
             'status' => $this->status,
-            'created_at' => $this->created_at,
+            'created_at' => Carbon::parse($this->created_at)->format("Y-m-d H:i:s"),
         ];
 
         if (!$this->audit) {

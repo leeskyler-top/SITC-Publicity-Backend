@@ -18,9 +18,11 @@ return new class extends Migration
             $table->string('title');
             $table->string('place');
             $table->enum('type', ['self-enrollment', 'ase', 'assignment'])->default('self-enrollment');
+            $table->enum("is_enrolling", ['1', '0'])->default('1');
             $table->text('note');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
+            $table->enum('status', ['waiting', 'started', 'ended'])->default('waiting');
             $table->timestamps();
             $table->softDeletes();
         });

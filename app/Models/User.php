@@ -76,7 +76,12 @@ class User extends Authenticatable
 
     public function activities()
     {
-        return $this->belongsToMany(Activity::class, 'activity_users');
+        return $this->belongsToMany(Activity::class, 'activity_users', 'user_id', 'activity_id');
+    }
+
+    public function activityApplications()
+    {
+        return $this->hasMany(ActivityAudit::class);
     }
 
     public function checkInUsers()

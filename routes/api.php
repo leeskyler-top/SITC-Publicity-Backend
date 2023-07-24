@@ -42,6 +42,9 @@ Route::middleware("auth:api")->group(function () {
         Route::post("/report/{equipment_rent_application_id}", [EquipmentController::class, 'reportEquipment']);
         Route::post("/delay-apply/{equipment_rent_application_id}", [EquipmentController::class, 'delayApply']);
     });
+    Route::prefix("activity")->group(function () {
+        Route::get("/list/{type}", [ActivityController::class, 'listActivityByType']);
+    });
 });
 Route::middleware("admin")->group(function () {
     Route::get('/files/admin/images/{type}/{filename}', [FileController::class, 'admin']);

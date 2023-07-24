@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ActivityApplicationResource;
 use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
+use App\Models\ActivityAudit;
+use App\Models\ActivityUser;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -206,5 +210,124 @@ class ActivityController extends Controller
         })->whereNotIn('id', $activity_current_users)
             ->get();
         return $this->jsonRes(200, "用户搜索成功", $users);
+    }
+
+    public function listActivityByType($type)
+    {
+        $types = ['assignment', 'recruiting', 'applying', 'rejected', 'ended'];
+        if (!in_array($type, $types)) {
+            return $this->jsonRes(404, '查询的类型不存在');
+        }
+        $user = Auth::user();
+        if ($type === 'assignment') {
+            $activities = $user->activities()->orderBy('start_time', 'desc')->where('end_time', '>', now())->get();
+            return $this->jsonRes(200, "活动获取成功", $activities);
+        } else if ($type === 'recruiting') {
+            $activities = Activity::where('is_enrolling', '1')->where(function ($query) {
+                $query->where('type', 'ase')
+                    ->orWhere('type', 'self-enrollment');
+            })->whereDoesntHave('users', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->where('start_time', '>', now())->get();
+            return $this->jsonRes(200, "活动获取成功", $activities);
+        }
+        // 还不知道对不对
+        else if ($type === 'applying' || $type === 'rejected') {
+            $status = ($type === 'applying') ? 'applying' : 'rejected';
+            $activities = $user->activityApplications()
+                ->where('status', $status)
+                ->whereHas('activity', function ($query) {
+                    $query->where('start_time', '>', now());
+                })
+                ->get();
+            return $this->jsonRes(200, "活动获取成功", $activities);
+        } else if ($type === 'ended') {
+            $activities = Activity::where(['status' => 'ended'])->get();
+            return $this->jsonRes(200, "活动获取成功", $activities);
+        }
+    }
+
+    public function listEnrollments($type)
+    {
+        $types = ['agreed', 'rejected', 'applying', 'all'];
+        if (!in_array($types, $type)) {
+            return $this->jsonRes(404, "状态不存在");
+        }
+        if ($type === 'all') {
+            $applications = ActivityAudit::order('created_at', 'desc')->all();
+            return $this->jsonRes(200, "列出所有申请成功", $applications);
+        } else {
+            $applications = ActivityAudit::where('status', $type)->whereHas('activity', function ($query) {
+                $query->where('start_time', '>', now());
+            })->where('start_time', '>', now());
+            return $this->jsonRes(200, "列出所有申请" . '(' . $types . ')' . '成功', ActivityApplicationResource::collection($applications));
+        }
+    }
+
+    public function agreeEnrollmnent($enrollment_id)
+    {
+        if (!is_numeric($enrollment_id)) {
+            return $this->jsonRes(404, '申请未找到');
+        }
+        $application = ActivityAudit::find($enrollment_id);
+        if (!$application) {
+            return $this->jsonRes(404, '申请未找到');
+        }
+        $activityStartTime = $application->activity->start_time;
+        $startTimeCarbon = Carbon::parse($activityStartTime);
+        $application_validator = $startTimeCarbon->isPast();
+        if (!$application_validator) {
+            return $this->jsonRes(400, "申请已过期");
+        }
+        if ($application->status !== 'applying') {
+            return $this->jsonRes(400, "申请状态错误");
+        }
+        $application->status = "agreed";
+        ActivityUser::create([
+            'user_id' => $application->user_id,
+            'activity_id' => $application->activity_id,
+        ]);
+        return $this->jsonRes(200, "已同意此申请");
+    }
+
+    public function rejectEnrollmnent($enrollment_id)
+    {
+        if (!is_numeric($enrollment_id)) {
+            return $this->jsonRes(404, '申请未找到');
+        }
+        $application = ActivityAudit::find($enrollment_id);
+        if (!$application) {
+            return $this->jsonRes(404, '申请未找到');
+        }
+        $activityStartTime = $application->activity->start_time;
+        $startTimeCarbon = Carbon::parse($activityStartTime);
+        $application_validator = $startTimeCarbon->isPast();
+        if (!$application_validator) {
+            return $this->jsonRes(400, "申请已过期");
+        }
+        if ($application->status !== 'applying') {
+            return $this->jsonRes(400, "申请状态错误");
+        }
+        $application->status = "rejected";
+        return $this->jsonRes(200, "已拒绝此申请");
+    }
+
+    public function enroll($activity_id)
+    {
+        if (!is_numeric($activity_id)) {
+            return $this->jsonRes(404, "活动未找到");
+        }
+        $user = Auth::user();
+        $activity = Activity::find($activity_id);
+        if (!$activity) {
+            return $this->jsonRes(404, "活动未找到");
+        }
+        if ($activity->status !== 'waiting' || $activity->is_enrolling !== '1' || ($activity->type === 'ase' || $activity->type === 'assigment')) {
+            return $this->jsonRes(404, "活动不允许报名或活动已开始");
+        }
+        $activity->activityAudits()->create([
+            'user_id' => $user->id
+        ]);
+        return $this->jsonRes(200, "活动报名成功");
     }
 }
