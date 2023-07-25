@@ -22,7 +22,6 @@ return new class extends Migration
             $table->text('note');
             $table->dateTime('start_time');
             $table->dateTime('end_time');
-            $table->enum('status', ['waiting', 'started', 'ended'])->default('waiting');
             $table->timestamps();
             $table->softDeletes();
         });

@@ -23,6 +23,7 @@ class ActivityResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'users' => $this->users->makeHidden(['pivot', 'token']),
+            'status' => $this->status
         ];
     }
 }
