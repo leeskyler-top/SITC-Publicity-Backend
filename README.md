@@ -302,8 +302,8 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 ### ActivityController 活动控制器
 
 #### 用户功能
-- [ ] listActivityByType 通过状态列出所有活动信息-
-- [ ] EnrollActivity 报名活动
+- [x] listActivityByType 通过状态列出所有活动信息-
+- [x] EnrollActivity 报名活动
 
 #### 管理员功能
 - [x] index 列出所有活动
@@ -314,8 +314,9 @@ mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 - [x] removeUser 将某人从某个活动中移出
 - [x] searchUserNotInActivityByName 模糊搜索不在某个活动中的用户
 - [ ] listCheckIns 列出当前活动所有签到信息
-- [ ] AgreeActivityEnrollments 同意报名
-- [ ] RejectActivityEnrollments 拒绝报名
+- [x] listEnrollments 同意报名
+- [x] AgreeActivityEnrollments 同意报名
+- [x] RejectActivityEnrollments 拒绝报名
 
 ### CheckInController 签到控制器
 

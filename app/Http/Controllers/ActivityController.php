@@ -242,7 +242,7 @@ class ActivityController extends Controller
                 ->get();
             return $this->jsonRes(200, "活动获取成功", $activities);
         } else if ($type === 'ended') {
-            $activities = Activity::where(['status' => 'ended'])->get();
+            $activities = Activity::where('start_time', '<', now())->get();
             return $this->jsonRes(200, "活动获取成功", $activities);
         }
     }
