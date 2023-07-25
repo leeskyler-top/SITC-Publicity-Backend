@@ -129,7 +129,7 @@ class ActivityController extends Controller
             'title' => 'string',
             'place' => 'string',
             'note' => 'string',
-            'start_time' => 'date_format:Y-m-d H:i:s|after:now',
+            'start_time' => 'date_format:Y-m-d H:i:s',
             'end_time' => 'date_format:Y-m-d H:i:s|after:start_time',
             'user_id' => 'array',
             'user_id.*' => [
