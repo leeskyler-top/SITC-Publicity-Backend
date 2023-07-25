@@ -34,15 +34,15 @@ class Activity extends Model
     {
         return $date->format("Y-m-d H:i:s");
     }
-    public function setStatusAttribute($value)
+    public function getStatusAttribute()
     {
         $now = now();
         if ($this->start_time > $now) {
-            $this->attributes['status'] = 'waiting';
+            return 'waiting';
         } elseif ($this->end_time <= $now) {
-            $this->attributes['status'] = 'ended';
+            return 'ended';
         } else {
-            $this->attributes['status'] = 'started';
+            return 'started';
         }
     }
     protected $guarded = [];
