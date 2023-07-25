@@ -27,5 +27,6 @@ class ActivityUser extends Model
         return $date->format("Y-m-d H:i:s");
     }
     protected $guarded = [];
+    public $timestamps = false;
 
 }

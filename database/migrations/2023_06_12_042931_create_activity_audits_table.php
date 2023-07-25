@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->unsignedBigInteger('audit_id')->nullable();
             $table->foreign('audit_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('status', ['applying', 'reject', 'agree'])->default('applying');
+            $table->enum('status', ['applying', 'rejected', 'agreed'])->default('applying');
             $table->timestamps();
         });
     }

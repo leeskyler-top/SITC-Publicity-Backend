@@ -43,6 +43,7 @@ Route::middleware("auth:api")->group(function () {
         Route::post("/delay-apply/{equipment_rent_application_id}", [EquipmentController::class, 'delayApply']);
     });
     Route::prefix("activity")->group(function () {
+        Route::get("/enroll/{activity_id}", [ActivityController::class, 'enrollActivity']);
         Route::get("/list/{type}", [ActivityController::class, 'listActivityByType']);
     });
 });
@@ -75,6 +76,11 @@ Route::middleware("admin")->group(function () {
     });
     Route::apiResource("equipment", EquipmentController::class);
     Route::prefix("activity")->group(function () {
+        Route::prefix("enrollment")->group(function () {
+            Route::get("/list/{type}", [ActivityController::class, 'listEnrollments']);
+            Route::get("/agree/{enrollment_id}", [ActivityController::class, 'agreeEnrollmnent']);
+            Route::get("/reject/{enrollment_id}", [ActivityController::class, 'rejectEnrollmnent']);
+        });
         Route::post("/search/users/{activity_id}", [ActivityController::class, 'searchUserNotInActivity']);
         Route::delete("/remove/{activity_id}/{user_id}", [ActivityController::class, 'removeUser']);
     });
