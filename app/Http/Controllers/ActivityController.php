@@ -202,8 +202,11 @@ class ActivityController extends Controller
             return $this->jsonRes(404, '活动未找到');
         }
         $data = $request->only(['info']);
-
         $activity_current_users = $activity->users()->pluck('user_id')->toArray(); // 获取已参与活动的用户ID数组
+        if (!isset($data['info']) || !$data['info'] || $data['info'] === '*') {
+            $users = User::whereNotIn('id', $activity_current_users)->get();
+            return $this->jsonRes(200, "用户搜索成功", $users);
+        }
         $users = User::where(function ($query) use ($data, $activity_current_users) {
             $query->where('name', 'LIKE', '%' . $data['info'] . '%')
                 ->orWhere('uid', 'LIKE', '%' . $data['info'] . '%');
