@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ActivityApplicationResource;
+use App\Http\Resources\ActivityNoUsersResource;
 use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
 use App\Models\ActivityAudit;
@@ -224,7 +225,7 @@ class ActivityController extends Controller
         $user = Auth::user();
         if ($type === 'assignment') {
             $activities = $user->activities()->orderBy('start_time', 'desc')->where('end_time', '>', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         } else if ($type === 'recruiting') {
             $activities = Activity::where('is_enrolling', '1')->where(function ($query) {
                 $query->where('type', 'ase')
@@ -232,12 +233,12 @@ class ActivityController extends Controller
             })->whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->where('start_time', '>', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
         // 还不知道对不对
         else if ($type === 'ended') {
             $activities = Activity::where('start_time', '<', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
     }
 
