@@ -45,6 +45,7 @@ Route::middleware("auth:api")->group(function () {
     Route::prefix("activity")->group(function () {
         Route::get("/enroll/{activity_id}", [ActivityController::class, 'enrollActivity']);
         Route::get("/list/{type}", [ActivityController::class, 'listActivityByType']);
+        Route::get("/list/application/{type}", [ActivityController::class, 'listActivityApplicationByType']);
     });
 });
 Route::middleware("admin")->group(function () {
