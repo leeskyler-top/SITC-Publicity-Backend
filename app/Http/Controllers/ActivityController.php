@@ -237,7 +237,7 @@ class ActivityController extends Controller
         }
         // 还不知道对不对
         else if ($type === 'ended') {
-            $activities = Activity::where('start_time', '<', now())->get();
+            $activities = Activity::where('end_time', '<', now())->get();
             return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
     }
