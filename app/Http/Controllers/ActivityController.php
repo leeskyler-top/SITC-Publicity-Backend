@@ -51,6 +51,8 @@ class ActivityController extends Controller
                 Rule::requiredIf(function () use ($data) {
                     if (isset($data['type'])) {
                         return $data['type'] === 'assignment';
+                    } else {
+                        return false;
                     }
                 }),
                 'array'
@@ -175,6 +177,7 @@ class ActivityController extends Controller
             return $this->jsonRes(404, '活动未找到');
         }
         $activity->users()->detach();
+        $activity->ActivityAudits()->delete();
         $activity->delete();
         return $this->jsonRes(200, "活动已删除");
     }
@@ -235,6 +238,8 @@ class ActivityController extends Controller
                     ->orWhere('type', 'self-enrollment');
             })->whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
+            })->whereDoesntHave('activityAudits', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
             })->where('start_time', '>', now())->get();
             return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
@@ -247,7 +252,9 @@ class ActivityController extends Controller
 
     public function listEnrollments()
     {
-        $activities = Activity::where('type', '!=', 'assignment')->where('start_time', '<', now())->get();
+        $activities = Activity::where('type', '!=', 'assignment')->where(function ($query) {
+            $query->where('start_time', '>', now());
+        })->get();
         $activities->each(function ($item) {
             $item->activityAudits;
             $item->admin_uid = $item->admin->uid;
@@ -272,7 +279,7 @@ class ActivityController extends Controller
         return $this->jsonRes(200, "获取活动申请状态成功", ActivityApplicationResource::collection($activities));
     }
 
-    public function agreeEnrollmnent($enrollment_id)
+    public function agreeEnrollment($enrollment_id)
     {
         if (!is_numeric($enrollment_id)) {
             return $this->jsonRes(404, '申请未找到');
@@ -299,7 +306,7 @@ class ActivityController extends Controller
         return $this->jsonRes(200, "已同意此申请");
     }
 
-    public function rejectEnrollmnent($enrollment_id)
+    public function rejectEnrollment($enrollment_id)
     {
         if (!is_numeric($enrollment_id)) {
             return $this->jsonRes(404, '申请未找到');
@@ -332,7 +339,7 @@ class ActivityController extends Controller
         if (!$activity) {
             return $this->jsonRes(404, "活动未找到");
         }
-        if ($activity->status !== 'waiting' || $activity->is_enrolling !== '1' || !($activity->type === 'ase' || $activity->type === 'assigment')) {
+        if ($activity->status !== 'waiting' || $activity->is_enrolling !== '1' || !($activity->type === 'ase' || $activity->type === 'self-enrollment')) {
             return $this->jsonRes(404, "活动不允许报名或活动已开始");
         }
         if ($activity->activityAudits()->where('user_id', $user->id)->exists()) {

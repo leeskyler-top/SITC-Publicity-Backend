@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 //});
 
 Route::options('/{any}', function () {
-    return response()->json(null, 200);
+    return response()->json(null,200);
 })->where('any', '.*');
 
 Route::post("/auth/login", [AuthController::class, 'login']);
@@ -80,8 +80,8 @@ Route::middleware("admin")->group(function () {
         Route::prefix("enrollment")->group(function () {
             Route::get("/list", [ActivityController::class, 'listEnrollments']);
             Route::get("/list/{type}", [ActivityController::class, 'listEnrollmentsByType']);
-            Route::get("/agree/{enrollment_id}", [ActivityController::class, 'agreeEnrollmnent']);
-            Route::get("/reject/{enrollment_id}", [ActivityController::class, 'rejectEnrollmnent']);
+            Route::get("/agree/{enrollment_id}", [ActivityController::class, 'agreeEnrollment']);
+            Route::get("/reject/{enrollment_id}", [ActivityController::class, 'rejectEnrollment']);
         });
         Route::post("/search/users/{activity_id}", [ActivityController::class, 'searchUserNotInActivity']);
         Route::delete("/remove/{activity_id}/{user_id}", [ActivityController::class, 'removeUser']);

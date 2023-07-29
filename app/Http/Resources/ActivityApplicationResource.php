@@ -20,6 +20,8 @@ class ActivityApplicationResource extends JsonResource
             'user_uid' => $this->user->uid,
             'user_name' => $this->user->name,
             'activity' => $this->activity,
+            'admin_uid' => $this->activity->loadMissing('admin')->admin->uid,
+            'admin_name' => $this->activity->loadMissing('admin')->admin->name,
             'status' => $this->status,
             'created_at' => Carbon::parse($this->created_at)->format("Y-m-d H:i:s"),
         ];
