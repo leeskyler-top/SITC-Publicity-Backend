@@ -77,7 +77,8 @@ Route::middleware("admin")->group(function () {
     Route::apiResource("equipment", EquipmentController::class);
     Route::prefix("activity")->group(function () {
         Route::prefix("enrollment")->group(function () {
-            Route::get("/list/{type}", [ActivityController::class, 'listEnrollments']);
+            Route::get("/list", [ActivityController::class, 'listEnrollments']);
+            Route::get("/list/{type}", [ActivityController::class, 'listEnrollmentsByType']);
             Route::get("/agree/{enrollment_id}", [ActivityController::class, 'agreeEnrollmnent']);
             Route::get("/reject/{enrollment_id}", [ActivityController::class, 'rejectEnrollmnent']);
         });

@@ -21,7 +21,7 @@ class ActivityController extends Controller
      */
     public function index()
     {
-        $activities = Activity::all();
+        $activities = Activity::orderBy('start_time', 'desc')->get();
         return $this->jsonRes(200, '列出所有活动成功', ActivityResource::collection($activities));
     }
 
@@ -120,10 +120,11 @@ class ActivityController extends Controller
             'note',
             'start_time',
             'end_time',
-            'user_id'
+            'user_id',
+            'is_enrolling'
         ]);
         $data = array_filter($data, function ($value) {
-            return !empty($value) || $value === 0;
+            return !empty($value) || $value === 0 || $value === '0';
         });
         $validator = Validator::make($data, [
             'title' => 'string',
@@ -137,6 +138,7 @@ class ActivityController extends Controller
                     $query->where('deleted_at', null);
                 }),
             ],
+            'is_enrolling' => 'in:1,0'
         ], [
             'title' => '标题必填',
             'type.required' => '类型必填',
@@ -146,6 +148,7 @@ class ActivityController extends Controller
             'start_time' => '开始时间必填，并且必须合法',
             'end_time' => '结束时间必填，并且不得早于开始时间',
             'user_id' => '用户必须是存在的',
+            'is_enrolling' => '必须是1或0'
         ]);
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
@@ -250,7 +253,20 @@ class ActivityController extends Controller
         }
     }
 
-    public function listEnrollments($type)
+    public function listEnrollments()
+    {
+        $activities = Activity::where('type', '!=', 'assignment')->where('start_time', '<', now())->get();
+        $activities->each(function ($item) {
+            $item->activityAudits;
+            $item->admin_uid = $item->admin->uid;
+            $item->admin_name = $item->admin->name;
+            $item->makeHidden(['pivot', 'admin']);
+        });
+        return $this->jsonRes(200, "获取所有活动与申请成功",$activities);
+    }
+
+
+    public function listEnrollmentsByType($type)
     {
         $types = ['agreed', 'rejected', 'applying', 'all'];
         if (!in_array($type, $types)) {
