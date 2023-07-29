@@ -256,9 +256,7 @@ class ActivityController extends Controller
         });
         return $this->jsonRes(200, "获取所有活动与申请成功",$activities);
     }
-
-
-    public function listEnrollmentsByType($type)
+    public function listActivityApplicationByType($type)
     {
         $types = ['applying', 'rejected'];
         if (!in_array($type, $types)) {
