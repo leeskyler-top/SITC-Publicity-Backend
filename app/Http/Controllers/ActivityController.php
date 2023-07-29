@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ActivityApplicationResource;
+use App\Http\Resources\ActivityNoUsersResource;
 use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
 use App\Models\ActivityAudit;
@@ -220,14 +221,14 @@ class ActivityController extends Controller
 
     public function listActivityByType($type)
     {
-        $types = ['assignment', 'recruiting', 'applying', 'rejected', 'ended'];
+        $types = ['assignment', 'recruiting', 'ended'];
         if (!in_array($type, $types)) {
             return $this->jsonRes(404, '查询的类型不存在');
         }
         $user = Auth::user();
         if ($type === 'assignment') {
             $activities = $user->activities()->orderBy('start_time', 'desc')->where('end_time', '>', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         } else if ($type === 'recruiting') {
             $activities = Activity::where('is_enrolling', '1')->where(function ($query) {
                 $query->where('type', 'ase')
@@ -235,21 +236,12 @@ class ActivityController extends Controller
             })->whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->where('start_time', '>', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
         // 还不知道对不对
-        else if ($type === 'applying' || $type === 'rejected') {
-            $status = ($type === 'applying') ? 'applying' : 'rejected';
-            $activities = $user->activityApplications()
-                ->where('status', $status)
-                ->whereHas('activity', function ($query) {
-                    $query->where('start_time', '>', now());
-                })
-                ->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
-        } else if ($type === 'ended') {
-            $activities = Activity::where('start_time', '<', now())->get();
-            return $this->jsonRes(200, "活动获取成功", $activities);
+        else if ($type === 'ended') {
+            $activities = Activity::where('end_time', '<', now())->get();
+            return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
     }
 
@@ -268,19 +260,18 @@ class ActivityController extends Controller
 
     public function listEnrollmentsByType($type)
     {
-        $types = ['agreed', 'rejected', 'applying', 'all'];
+        $types = ['applying', 'rejected'];
         if (!in_array($type, $types)) {
-            return $this->jsonRes(404, "状态不存在");
+            return $this->jsonRes(404, '查询的类型不存在');
         }
-        if ($type === 'all') {
-            $applications = ActivityAudit::orderBy('created_at', 'desc')->get();
-            return $this->jsonRes(200, "列出所有申请成功", ActivityApplicationResource::collection($applications));
-        } else {
-            $applications = ActivityAudit::where('status', $type)->whereHas('activity', function ($query) {
+        $user = Auth::user();
+        $activities = $user->activityApplications()
+            ->where('status', $type)
+            ->whereHas('activity', function ($query) {
                 $query->where('start_time', '>', now());
-            })->get();
-            return $this->jsonRes(200, "列出所有申请" . '(' . $type . ')' . '成功', ActivityApplicationResource::collection($applications));
-        }
+            })
+            ->get();
+        return $this->jsonRes(200, "获取活动申请状态成功", ActivityApplicationResource::collection($activities));
     }
 
     public function agreeEnrollmnent($enrollment_id)

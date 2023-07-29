@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ActivityResource extends JsonResource
+class ActivityNoUsersResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -24,9 +24,7 @@ class ActivityResource extends JsonResource
             'note' => $this->note,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'users' => $this->loadMissing('users')->users->makeHidden(['pivot', 'token']),
-            'status' => $this->status,
-            'is_enrolling' => $this->is_enrolling,
+            'status' => $this->status
         ];
     }
 }
