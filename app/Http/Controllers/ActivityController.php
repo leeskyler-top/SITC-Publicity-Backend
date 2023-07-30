@@ -256,7 +256,11 @@ class ActivityController extends Controller
             $query->where('start_time', '>', now());
         })->get();
         $activities->each(function ($item) {
-            $item->activityAudits;
+            $item->activityAudits->each(function ($item) {
+                $item->uid = $item->user->uid;
+                $item->department = $item->user->department;
+                $item->name = $item->user->name;
+            });
             $item->admin_uid = $item->admin->uid;
             $item->admin_name = $item->admin->name;
             $item->makeHidden(['pivot', 'admin']);
