@@ -239,7 +239,8 @@ class ActivityController extends Controller
             })->whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->whereDoesntHave('activityAudits', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
+                $query->where('user_id', $user->id)
+                    ->where('status', 'applying');
             })->where('start_time', '>', now())->get();
             return $this->jsonRes(200, "活动获取成功", ActivityNoUsersResource::collection($activities));
         }
@@ -346,7 +347,7 @@ class ActivityController extends Controller
         if ($activity->status !== 'waiting' || $activity->is_enrolling !== '1' || !($activity->type === 'ase' || $activity->type === 'self-enrollment')) {
             return $this->jsonRes(404, "活动不允许报名或活动已开始");
         }
-        if ($activity->activityAudits()->where('user_id', $user->id)->exists()) {
+        if ($activity->activityAudits()->where('user_id', $user->id)->where('status', 'applying')->exists()) {
             return $this->jsonRes(400, "您已报名此活动");
         }
         $activity->activityAudits()->create([
