@@ -79,7 +79,7 @@ Route::middleware("admin")->group(function () {
     Route::prefix("activity")->group(function () {
         Route::prefix("enrollment")->group(function () {
             Route::get("/list", [ActivityController::class, 'listEnrollments']);
-            Route::get("/list/{type}", [ActivityController::class, 'listEnrollmentsByType']);
+            Route::get("/list/{type}", [ActivityController::class, 'listActivityApplicationByType']);
             Route::get("/agree/{enrollment_id}", [ActivityController::class, 'agreeEnrollment']);
             Route::get("/reject/{enrollment_id}", [ActivityController::class, 'rejectEnrollment']);
         });
