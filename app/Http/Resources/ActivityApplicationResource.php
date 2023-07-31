@@ -24,6 +24,7 @@ class ActivityApplicationResource extends JsonResource
             'admin_name' => $this->activity->loadMissing('admin')->admin->name,
             'status' => $this->status,
             'created_at' => Carbon::parse($this->created_at)->format("Y-m-d H:i:s"),
+            'updated_at' => Carbon::parse($this->updated_at)->format("Y-m-d H:i:s"),
         ];
         if (!$this->audit) {
             $arr['audit_uid'] = null;
