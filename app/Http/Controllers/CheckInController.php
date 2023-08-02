@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CheckIn;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CheckInController extends Controller
 {
@@ -11,7 +14,8 @@ class CheckInController extends Controller
      */
     public function index()
     {
-        //
+        $checkIn = CheckIn::orderBy('start_time', 'desc');
+        return $this->jsonRes(200, '获取所有签到成功', $checkIn);
     }
 
     /**
@@ -19,7 +23,52 @@ class CheckInController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->only([
+            'activity_id',
+            'user_id',
+            'start_time',
+            'end_time',
+        ]);
+        $validator = Validator::make($data, [
+            'activity_id' => [
+                'integer',
+                'required',
+                Rule::exists('activities', 'id')->where(function ($query) {
+                    $query->where('deleted_at', null);
+                }),
+            ],
+            'user_id' => 'required|array',
+            'user_id.*' => [
+                'integer',
+                Rule::exists('activity_users', 'user_id')->where(function ($query) use ($data) {
+                    $query->where('activity_id', $data['activity_id']);
+                }),
+            ],
+            'start_time' => 'required|date_format:Y-m-d H:i:s',
+            'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
+            'status' => 'required',
+        ], [
+            'activity_id' => '活动ID必填且必须存在',
+            'user_id' => '用户必填',
+            'user_id.*' => '用户必须存在',
+            'start_time' => '开始时间必填且必须合法',
+            'end_time' => '结束时间必填且必须合法',
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $users = [];
+        if (isset($data['user_id'])) {
+            $users = $data['user_id'];
+            unset($data['user_id']);
+        }
+        $checkIn = CheckIn::create($data);
+        foreach ($users as $user) {
+            $checkIn->checkInUsers()->create([
+                'user_id' => $user->id
+            ]);
+        }
+        return $this->jsonRes(200, '签到创建成功', $checkIn);
     }
 
     /**
@@ -27,7 +76,14 @@ class CheckInController extends Controller
      */
     public function show(string $id)
     {
-        //
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkIn = CheckIn::find($id);
+        if (!$checkIn) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        return $this->jsonRes(200, "获取签到信息成功", $checkIn);
     }
 
     /**
@@ -35,7 +91,29 @@ class CheckInController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkIn = CheckIn::find($id);
+        if (!$checkIn) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $data = $request->only([
+            'start_time',
+            'end_time',
+        ]);
+        $validator = Validator::make($data, [
+            'start_time' => 'required|date_format:Y-m-d H:i:s',
+            'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
+        ], [
+            'start_time' => '开始时间必填且必须合法',
+            'end_time' => '结束时间必填且必须合法',
+        ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $checkIn->fill($data)->save();
+        return $this->jsonRes(200, '签到信息修改成功', $checkIn);
     }
 
     /**
@@ -43,6 +121,15 @@ class CheckInController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkIn = CheckIn::find($id);
+        if (!$checkIn) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkIn->checkInUsers()->delete();
+        $checkIn->delete();
+        return $this->jsonRes(200, "此签到已删除");
     }
 }

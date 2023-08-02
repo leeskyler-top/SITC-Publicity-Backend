@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->dateTime('start_time');
             $table->dateTime('end_time');
-            $table->enum('status', ['waiting', 'started', 'ended'])->default('waiting');
             $table->timestamps();
         });
     }

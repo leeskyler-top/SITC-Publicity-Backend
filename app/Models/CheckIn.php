@@ -19,6 +19,11 @@ class CheckIn extends Model
         return $this->belongsTo(Activity::class);
     }
 
+    public function checkInUsers()
+    {
+        return $this->hasMany(CheckIn::class);
+    }
+
     // 不知道
     public function admin()
     {
@@ -28,6 +33,18 @@ class CheckIn extends Model
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format("Y-m-d H:i:s");
+    }
+
+    public function getStatusAttribute()
+    {
+        $now = now();
+        if ($this->start_time > $now) {
+            return 'waiting';
+        } elseif ($this->end_time <= $now) {
+            return 'ended';
+        } else {
+            return 'started';
+        }
     }
 
     protected $guarded = [];
