@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CheckInResource;
 use App\Models\CheckIn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +16,7 @@ class CheckInController extends Controller
     public function index()
     {
         $checkIn = CheckIn::orderBy('start_time', 'desc');
-        return $this->jsonRes(200, '获取所有签到成功', $checkIn);
+        return $this->jsonRes(200, '获取所有签到成功', CheckInResource::collection($checkIn));
     }
 
     /**
@@ -83,7 +84,7 @@ class CheckInController extends Controller
         if (!$checkIn) {
             return $this->jsonRes(404, '签到未找到');
         }
-        return $this->jsonRes(200, "获取签到信息成功", $checkIn);
+        return $this->jsonRes(200, "获取签到信息成功", new CheckInResource($checkIn));
     }
 
     /**
@@ -113,7 +114,7 @@ class CheckInController extends Controller
             return $this->jsonRes(422, $validator->errors()->first());
         }
         $checkIn->fill($data)->save();
-        return $this->jsonRes(200, '签到信息修改成功', $checkIn);
+        return $this->jsonRes(200, '签到信息修改成功', new CheckInResource($checkIn));
     }
 
     /**
