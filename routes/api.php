@@ -27,6 +27,7 @@ Route::options('/{any}', function () {
     return response()->json(null,200);
 })->where('any', '.*');
 
+Route::get('/captcha', [AuthController::class, 'generateCaptcha']);
 Route::post("/auth/login", [AuthController::class, 'login']);
 Route::middleware("auth:api")->group(function () {
     Route::get('/files/images/{type}/{filename}', [FileController::class, 'normal']);
