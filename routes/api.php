@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ApiHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
@@ -87,4 +88,7 @@ Route::middleware("admin")->group(function () {
         Route::delete("/remove/{activity_id}/{user_id}", [ActivityController::class, 'removeUser']);
     });
     Route::apiResource("activity", ActivityController::class);
+    Route::prefix('/security-history')->group(function () {
+        Route::get("/", [ApiHistoryController::class, 'list']);
+    });
 });
