@@ -100,6 +100,12 @@ server {
         deny all;
     }
 
+    
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+
     # 可选配置，使得一些HTTP状态码返回为JSON格式。
     error_page 403 /403.json;
     location = /403.json {
@@ -215,13 +221,18 @@ cd #到你想要的网站目录
 git clone https://github.com/leeskyler-top/SITC-Publicity-Backend.git
 cd SITC-Publicity-Backend
 mv ./* ../
+cd ../
 rm -rf SITC-Publicity-Backend
+mkdir -p ./public/files/images/assigned
+mkdir -p ./public/files/images/damaged
+mkdir -p ./public/files/images/returned
+mkdir -p ./public/files/images/activity
 composer install
 chown -R www-data:www-data ./*
 chmod -R 755 ./*
 ```
 依照env.example配置.env文件
-编辑完成后，生成base64盐（此步骤也需要联网）
+编辑完成后，生成base64 APP_KEY（此步骤也需要联网）
 ```
 php artisan key:genreate
 ```
@@ -244,6 +255,31 @@ quit;
 mysql -u 账户 -p sitc_publicity < SQL文件所在路径
 ```
 
+***
+
+##### 跨域与反代说明
+对于信任的Origin，在部署项目后需要修改app/Http/Middleware/CorsMiddleware.php中的allowedDomains数组内容
+格式举例：
+
+```
+$allowedDomains = [
+    'https://example.com',
+    'http://localhost:5173',
+];
+```
+
+如果想要放行所有的Origin，您可以将handle方法中的代码修改为
+```
+if ($request->is('api/v1/files/*')) {
+    return $next($request);
+}
+return $next($request)
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE')
+        ->header('Access-Control-Allow-Headers', 'Content-Type');
+```
+
+想要为服务添加反向代理，请参照laravel官方文档，按需修改文件，如TrustProxies.php等。
 ***
 
 ## 项目API功能 To-do List

@@ -4,6 +4,7 @@ namespace App\Http;
 
 use App\Http\Middleware\AdminCheck;
 use App\Http\Middleware\CorsMiddleware;
+use App\Http\Middleware\RecordApiAccessMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,10 +44,12 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            CorsMiddleware::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            CorsMiddleware::class
+            RecordApiAccessMiddleware::class,
+            'throttle:50,1'
         ],
 
         'admin' => [
@@ -73,5 +76,6 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'cors_verified' => CorsMiddleware::class
     ];
 }

@@ -19,11 +19,24 @@ class CorsMiddleware
             return $next($request);
         }
 
-        $response = $next($request);
-        $response->header('Access-Control-Allow-Origin', '*');
-        $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        $allowedDomains = [
+            'https://twxc-beta.leeskyler.top',
+            'http://localhost:5173',
+        ];
 
-        return $response;
+        $origin = $request->header('Origin');
+
+        if (!$origin) {
+            return $next($request);
+        }
+
+        if (!in_array($origin, $allowedDomains)) {
+            return response()->json(['msg' => '未授权'], 401);
+        }
+
+        return $next($request)
+            ->header('Access-Control-Allow-Origin', $origin)
+            ->header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE')
+            ->header('Access-Control-Allow-Headers', 'Content-Type');
     }
 }

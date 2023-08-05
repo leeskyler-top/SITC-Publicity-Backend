@@ -16,6 +16,8 @@ class CheckInUsersResource extends JsonResource
     {
         return [
             'activity_id' => $this->activity_id,
+            'activity_title' => $this->loadMissing('activity')->activity->title,
+            'activity_place' => $this->loadMissing('activity')->activity->place,
             'user_uid' => $this->loadMissing('users')->checkInUsers->uid,
             'user_department' => $this->loadMissing('users')->checkInUsers->department,
             'user_name' => $this->loadMissing('users')->checkInUsers->name,

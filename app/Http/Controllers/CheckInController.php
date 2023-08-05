@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\CheckInResource;
+use App\Http\Resources\CheckInUsersResource;
 use App\Models\CheckIn;
+use App\Models\CheckInUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +18,7 @@ class CheckInController extends Controller
      */
     public function index()
     {
-        $checkIn = CheckIn::orderBy('start_time', 'desc');
+        $checkIn = CheckIn::orderBy('start_time', 'desc')->get();
         return $this->jsonRes(200, '获取所有签到成功', CheckInResource::collection($checkIn));
     }
 
@@ -133,4 +136,39 @@ class CheckInController extends Controller
         $checkIn->delete();
         return $this->jsonRes(200, "此签到已删除");
     }
+
+    public function listMyCheckIns()
+    {
+        $checkIns = CheckInUser::where(['user_id' => Auth::id(), 'status' => 'unsigned'])->orderBy('start_time', 'asc')->get();
+        return $this->jsonRes(200, '签到列表获取成功', CheckInUsersResource::collection($checkIns));
+    }
+
+    public function checkIn($id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser = CheckInUser::find($id);
+        if (!$checkInUser || $checkInUser->status !== 'unsigned') {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser->status = 'signed';
+        $checkInUser->save();
+        return $this->jsonRes(200, '签到成功');
+    }
+
+    public function revokeCheckIn($id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser = CheckInUser::find($id);
+        if (!$checkInUser || $checkInUser->status !== 'signed') {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser->status = 'invalid';
+        $checkInUser->save();
+        return $this->jsonRes(200, '签到已驳回');
+    }
+
 }
