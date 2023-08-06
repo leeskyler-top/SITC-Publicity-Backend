@@ -100,6 +100,54 @@ server {
         deny all;
     }
 
+
+    location ^~ /backend/app/ {
+        deny all;
+    }
+
+    location ^~ /backend/bootstrap/ {
+        deny all;
+    }
+
+    location ^~ /backend/config/ {
+        deny all;
+    }
+
+    location ^~ /backend/database/ {
+        deny all;
+    }
+
+    location ^~ /backend/resource/ {
+        deny all;
+    }
+
+    location ^~ /backend/routes/ {
+        deny all;
+    }
+
+    location ^~ /backend/tests/ {
+        deny all;
+    }
+
+    location ^~ /backend/vendor/ {
+        deny all;
+    }
+
+    location ^~ /backend/storage/framework/ {
+        deny all;
+    }
+
+    location ^~ /backend/storage/logs/ {
+        deny all;
+    }
+
+    location ~ /(artisan|composer\.json|composer\.lock|package\.json|phpunit\.xml|README\.md|vite\.config\.js) {
+        deny all;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
     
     location ~ /\.(?!well-known).* {
         deny all;
