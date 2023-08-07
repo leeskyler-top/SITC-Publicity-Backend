@@ -30,6 +30,11 @@ class Activity extends Model
         return $this->hasMany(ActivityAudit::class);
     }
 
+    public function chedckIns()
+    {
+        return $this->hasMany(CheckIn::class);
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format("Y-m-d H:i:s");

@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('check_ins', function (Blueprint $table) {
             $table->id();
             $table->foreignId('activity_id')->constrained();
-            $table->foreignId('admin_id')->constrained();
+            $table->unsignedBigInteger('admin_id');
+            $table->foreign('admin_id')->references('id')->on('users')->cascadeOnDelete();
             $table->dateTime('start_time');
             $table->dateTime('end_time');
             $table->timestamps();

@@ -19,12 +19,22 @@ class CheckInResource extends JsonResource
             'activity_id' =>  $this->activity_id,
             'activity_title' => $this->loadMissing('activity')->activity->title,
             'activity_place' => $this->loadMissing('activity')->activity->place,
-            'admin_uid' => $this->loadMissing('admin')->checkInUsers->uid,
-            'admin_name' => $this->loadMissing('admin')->checkInUsers->name,
+            'admin_uid' => $this->loadMissing('admin')->admin->uid,
+            'admin_name' => $this->loadMissing('admin')->admin->name,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'status' => $this->status,
-            'checkInUsers' => CheckInUsersResource::collection($this->checkInUsers)
+            'checkInUsers' => $this->checkInUsers->map(function ($checkInUser) {
+                return $checkInUser->users->map(function ($user) use ($checkInUser) {
+                    return [
+                        'user_id' => $user->id,
+                        'department' => $user->department,
+                        'classname' => $user->classname,
+                        'name' => $user->name,
+                        'status' => $checkInUser->status
+                    ];
+                });
+            })->flatten(1),
         ];
     }
 }

@@ -179,6 +179,7 @@ class ActivityController extends Controller
         $activity->users()->detach();
         $activity->ActivityAudits()->delete();
         $activity->delete();
+        $activity->checkIns()->delete();
         return $this->jsonRes(200, "活动已删除");
     }
 

@@ -5,11 +5,10 @@ namespace App\Models;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CheckIn extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $hidden = [
         'deleted_at'
@@ -21,7 +20,7 @@ class CheckIn extends Model
 
     public function checkInUsers()
     {
-        return $this->hasMany(CheckIn::class);
+        return $this->hasMany(CheckInUser::class);
     }
 
     // 不知道
