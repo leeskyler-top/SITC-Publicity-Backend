@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('check_in_id')->constrained();
             $table->foreignId('user_id')->constrained();
-            $table->enum('status', ['signed', 'unsigned', 'invalid'])->default('unsigned');
+            $table->enum('status', ['signed', 'unsigned'])->default('unsigned');
             $table->text('image_url')->nullable();
             $table->timestamps();
             $table->softDeletes();

@@ -362,10 +362,12 @@ return $next($request)
     - 申请中、已归还、申请遭拒、申请延期、已延期、已上报的受损、已上报的丢失
 - [x] indexUnassignedEquipments 列出空闲状态的设备
 - [x] equipmentApply 设备申请
+    - [ ] 完成面向管理员通知广播
 - [x] back 归还设备
 - [x] delayApply 延期申报
+    - [ ] 完成面向管理员通知广播
 - [x] reportEquipment 设备异常报告（丢失、损坏）
-
+    - [ ] 完成面向管理员通知广播
 #### 管理员功能
 - [x] index 列出所有未删除的设备
 - [x] store 添加设备
@@ -386,37 +388,49 @@ return $next($request)
 ### ActivityController 活动控制器
 
 #### 用户功能
-- [x] listActivityByType 通过状态列出所有活动信息-
-- [x] EnrollActivity 报名活动
+- [x] listActivityByType 通过状态列出所有活动信息
+- [x] EnrollActivity 报名活动 
+  - [ ] 完成面向管理员通知广播
 
 #### 管理员功能
 - [x] index 列出所有活动
 - [x] show 显示活动具体信息
-- [x] store 新增活动
-- [x] update 更新活动信息
+- [x] store 新增活动 
+  - [ ] 完成通知广播，对当场指派的用户发送通知
+- [x] update 更新活动信息 
+  - [ ] 完成对新增指派用户的通知
 - [x] destroy 删除活动（软删除）
-- [x] removeUser 将某人从某个活动中移出
+  - [ ] 完成将未进行的签到删除
+  - [x] removeUser 将某人从某个活动中移出 
+    - [ ] 完成同步将用户从未开始的签到组中删除，已开始的不会移除。
+    - [ ] 完成通知用户
 - [x] searchUserNotInActivityByName 模糊搜索不在某个活动中的用户
 - [ ] listCheckIns 列出当前活动所有签到信息
-- [x] listEnrollments 同意报名
-- [x] AgreeActivityEnrollments 同意报名
-- [x] RejectActivityEnrollments 拒绝报名
+- [x] listEnrollments 列出报名
+- [x] AgreeActivityEnrollments 同意报名 
+  - [ ] 完成同步将用户添加至正在进行或已开始的签到 
+  - [ ] 完成通知用户
+- [x] RejectActivityEnrollments 拒绝报名  
+  - [x] 完成通知用户
+
 
 ### CheckInController 签到控制器
 
 #### 用户功能
-- [ ] checkIn 签到
+- [x] checkIn 签到
 
 #### 管理员功能
-- [ ] index 列出所有活动
-- [ ] store 新增签到
-- [ ] show 显示签到具体信息
-- [ ] update 更新签到信息
-- [ ] destroy 删除活动（软删除）
-- [ ] revokeCheckInUser 撤销某人在某次签到中的签到行为
-- [ ] GetCheckInUserInfo 查看某人在某次签到中的具体照片
-
-
+- [x] index 列出所有活动
+- [x] store 新增签到
+- [x] show 显示签到具体信息
+- [x] update 更新签到信息
+- [x] destroy 删除活动（软删除）
+- [x] revokeCheckInUser 撤销某人在某次签到中的签到行为
+  - [ ] 完成通知用户
+- [ ] addCheckInUser 为签到组内新增参加活动的人员
+  - [ ] 完成通知用户
+- [ ] removeCheckInUser 将人员从签到组内移出
+  - [ ] 完成通知用户
 ### MessageController 消息控制器
 - [ ] getMyMsg 获取新消息
 - [ ] readMsg 已读某个消息

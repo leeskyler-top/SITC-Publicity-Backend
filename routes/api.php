@@ -50,6 +50,10 @@ Route::middleware("auth:api")->group(function () {
         Route::get("/list/{type}", [ActivityController::class, 'listActivityByType']);
         Route::get("/list/application/{type}", [ActivityController::class, 'listActivityApplicationByType']);
     });
+    Route::prefix('checkin')->group(function () {
+        Route::get("/list/{status}", [CheckInController::class, 'listMyCheckIns']);
+        Route::post("/now/{id}", [CheckInController::class, 'checkIn']);
+    });
 });
 Route::middleware("admin")->group(function () {
     Route::get('/files/admin/images/{type}/{filename}', [FileController::class, 'admin']);
@@ -90,6 +94,9 @@ Route::middleware("admin")->group(function () {
         Route::delete("/remove/{activity_id}/{user_id}", [ActivityController::class, 'removeUser']);
     });
     Route::apiResource("activity", ActivityController::class);
+    Route::prefix('checkin')->group(function () {
+        Route::get("/revoke/{id}", [CheckInController::class, 'revokeCheckIn']);
+    });
     Route::apiResource("checkin", CheckInController::class);
     Route::prefix('/security-history')->group(function () {
         Route::get("/", [ApiHistoryController::class, 'list']);

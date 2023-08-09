@@ -135,10 +135,16 @@ class CheckInController extends Controller
         return $this->jsonRes(200, "此签到已删除");
     }
 
-    public function listMyCheckIns()
+    public function listMyCheckIns($status)
     {
-        $checkIns = CheckInUser::where(['user_id' => Auth::id(), 'status' => 'unsigned'])->orderBy('start_time', 'asc')->get();
-        return $this->jsonRes(200, '签到列表获取成功', CheckInUsersResource::collection($checkIns));
+        $statuses = ['waiting', 'started', 'ended'];
+        if (!in_array($status, $statuses)) {
+            return $this->jsonRes(404, '查询的状态不存在');
+        }
+        $checkins = CheckInUser::where(['user_id' => Auth::id(), 'status' => 'unsigned'])->get()->filter(function ($item) use ($status) {
+            return $item->checkIn->status === $status;
+        });
+        return $this->jsonRes(200, '签到列表获取成功' . '(' . $status . ')', CheckInUsersResource::collection($checkins));
     }
 
     public function checkIn(Request $request, $id)
@@ -147,10 +153,10 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser = CheckInUser::find($id);
-        if (!$checkInUser || $checkInUser->status !== 'unsigned') {
+        if (!$checkInUser || $checkInUser->status !== 'unsigned' || $checkInUser->checkIn->status !== 'started') {
             return $this->jsonRes(404, '签到未找到');
         }
-        $data = $request->only(['images']);
+        $data = $request->only(['image_url']);
         $validator = Validator::make($data, [
             'image_url' => 'required|array',
             'image_url.*' => 'required|image'
@@ -158,6 +164,9 @@ class CheckInController extends Controller
             'image_url' => '必须上传至少一张图片',
             'image_url.*' => '必须上传至少一张图片'
         ]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
         $checkInUser->status = 'signed';
         $checkInUser->image_url = $data['image_url'];
         $checkInUser->save();
@@ -170,10 +179,10 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser = CheckInUser::find($id);
-        if (!$checkInUser || $checkInUser->status !== 'signed') {
+        if (!$checkInUser || $checkInUser->status !== 'signed' || $checkInUser->checkIn->status !== 'started') {
             return $this->jsonRes(404, '签到未找到');
         }
-        $checkInUser->status = 'invalid';
+        $checkInUser->status = 'unsigned';
         $checkInUser->save();
         return $this->jsonRes(200, '签到已驳回');
     }
