@@ -6,9 +6,11 @@ use App\Http\Resources\CheckInResource;
 use App\Http\Resources\CheckInUsersResource;
 use App\Models\CheckIn;
 use App\Models\CheckInUser;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -168,7 +170,12 @@ class CheckInController extends Controller
             return $this->jsonRes(422, $validator->errors()->first());
         }
         $checkInUser->status = 'signed';
-        $checkInUser->image_url = $data['image_url'];
+        foreach ($data['image_url'] as $image) {
+            $path = Storage::put('images/assigned', $image);
+            $imageUrls[] = $path;
+        }
+
+        $checkInUser->image_url = json_encode($imageUrls);
         $checkInUser->save();
         return $this->jsonRes(200, '签到成功');
     }
@@ -183,7 +190,9 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser->status = 'unsigned';
+        $checkInUser->image_url = null;
         $checkInUser->save();
+        Message::sendMsg('您的签到被驳回', '我们很遗憾的通知您，管理员驳回了您在' . $checkInUser->checkIn->title . '的签到，详情请咨询活动负责人或管理员', 'private', $checkInUser->user_id);
         return $this->jsonRes(200, '签到已驳回');
     }
 

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('check_ins', function (Blueprint $table) {
             $table->id();
+            $table->string('title');
             $table->foreignId('activity_id')->constrained();
             $table->unsignedBigInteger('admin_id');
             $table->foreign('admin_id')->references('id')->on('users')->cascadeOnDelete();

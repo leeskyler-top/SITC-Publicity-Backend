@@ -8,6 +8,7 @@ use App\Http\Resources\ActivityResource;
 use App\Models\Activity;
 use App\Models\ActivityAudit;
 use App\Models\ActivityUser;
+use App\Models\Message;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -82,8 +83,12 @@ class ActivityController extends Controller
             unset($data['user_id']);
         }
         $activity = Activity::create($data)->refresh();
+        Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'all', null);
         if ($data['type'] !== 'self-enrollment' && isset($users)) {
             $activity->users()->sync($users);
+            foreach ($users as $user) {
+                Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'private', $user);
+            }
         }
         return $this->jsonRes(200, '活动创建成功', new ActivityResource($activity));
 
@@ -156,6 +161,12 @@ class ActivityController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
+        foreach ($data['user_id'] as $user_id) {
+            if ($activity->users()->where('user_id', $user_id)->exists()) {
+                continue;
+            }
+            Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'private', $user_id);
+        }
         if (isset($data['user_id'])) {
             $activity->users()->syncWithoutDetaching($data['user_id']);
             unset($data['user_id']);
@@ -197,6 +208,7 @@ class ActivityController extends Controller
             return $this->jsonRes(404, '用户不存在');
         }
         $activity->users()->detach($user_id);
+        Message::sendMsg('管理员将您从活动人员中移除', '我们很遗憾的通知您：管理员已将您从'  . $activity->title . '活动人员中移除，详情请咨询活动负责人或管理员' , 'private', $user_id);
         return $this->jsonRes(200, "用户已移出");
     }
 
@@ -309,6 +321,7 @@ class ActivityController extends Controller
             'user_id' => $application->user_id,
             'activity_id' => $application->activity_id,
         ]);
+        Message::sendMsg('您的活动报名申请已通过', '您于' . $application->created_at . '报名的' . $application->activity->title . '活动已通过' , 'private', $application->user_id);
         return $this->jsonRes(200, "已同意此申请");
     }
 
@@ -332,6 +345,7 @@ class ActivityController extends Controller
         }
         $application->status = "rejected";
         $application->save();
+        Message::sendMsg('您的活动报名申请已被拒绝', '我们很遗憾的通知您，您于' . $application->created_at . '报名的' . $application->activity->title . '活动已被拒绝' , 'private', $application->user_id);
         return $this->jsonRes(200, "已拒绝此申请");
     }
 
@@ -354,6 +368,7 @@ class ActivityController extends Controller
         $activity->activityAudits()->create([
             'user_id' => $user->id
         ]);
+        Message::sendMsg('您有一条 活动报名 申请 待审批', '此消息面向所有管理员，设备申请人:' . Auth::user()->name, 'admin', null);
         return $this->jsonRes(200, "活动报名成功");
     }
 }

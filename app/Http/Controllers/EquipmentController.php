@@ -7,6 +7,7 @@ use App\Http\Resources\EquipmentRentResource;
 use App\Models\Equipment;
 use App\Models\EquipmentDelayApplication;
 use App\Models\EquipmentRent;
+use App\Models\Message;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -403,6 +404,7 @@ class EquipmentController extends Controller
         $data['user_id'] = Auth::id();
         $equipment_application = EquipmentRent::create($data);
         $equipment_application->refresh();
+        Message::sendMsg('您有一条 设备 使用 申请 待审批', '此消息面向所有管理员，设备申请人:' . Auth::user()->name, 'admin', null);
         return $this->jsonRes(200, "设备申请成功", new EquipmentRentResource($equipment_application));
     }
 
@@ -414,7 +416,7 @@ class EquipmentController extends Controller
         }
         $user = Auth::user();
         $statuses = ['assigned', 'delay-applying', 'delayed'];
-        $application_validator = $user->equipmentRents()->where('id',  $equipment_rent_id)
+        $application_validator = $user->equipmentRents()->where('id', $equipment_rent_id)
             ->whereIn('status', $statuses)
             ->exists();
         if (!$application_validator) {
@@ -440,7 +442,7 @@ class EquipmentController extends Controller
             $path = Storage::put('images/returned', $image);
             $returnedUrls[] = $path;
         }
-        $application = $user->equipmentRents()->where('id',  $equipment_rent_id)
+        $application = $user->equipmentRents()->where('id', $equipment_rent_id)
             ->whereIn('status', $statuses)
             ->first();
         $data['returned_url'] = json_encode($returnedUrls);
@@ -493,6 +495,7 @@ class EquipmentController extends Controller
         $eda->refresh();
         $eda->equipmentRent->status = 'delay-applying';
         $eda->equipmentRent->save();
+        Message::sendMsg('您有一条 设备 延期 申请 待审批', '此消息面向所有管理员，设备申请人:' . Auth::user()->name, 'admin', null);
         return $this->jsonRes(200, "设备延期申请提交成功");
     }
 
@@ -562,11 +565,15 @@ class EquipmentController extends Controller
 
         $application_delay_applications = $equipment_rent->equipmentDelayApplications;
         foreach ($application_delay_applications as $application_delay_application) {
-            $application_delay_application->status = 'rejected';
-            $application_delay_application->audit_id = Auth::id();
-            $application_delay_application->save();
+            if ($application_delay_application->status === 'delay-applying') {
+                $application_delay_application->status = 'rejected';
+                $application_delay_application->audit_id = Auth::id();
+                $application_delay_application->save();
+            } else {
+                continue;
+            }
         }
-
+        Message::sendMsg('您有一条 设备 异常报告 待审查', '此消息面向所有管理员，设备异常报告人:' . Auth::user()->name . '，报告时间:' . Carbon::now()->format('Y-m-d H:i'), 'admin', null);
         return $this->jsonRes(200, '设备异常已报告成功');
     }
 
@@ -651,7 +658,7 @@ class EquipmentController extends Controller
             $otherApplication->audit_time = Carbon::now()->format("Y-m-d H:i:s");
             $otherApplication->save();
         }
-
+        Message::sendMsg('您的设备使用申请已通过', '您于' . $application->apply_time . '申请的' . $application->equipment->name . '已通过', 'private', $application->user_id);
         return $this->jsonRes(200, '已通过此申请');
     }
 
@@ -672,7 +679,7 @@ class EquipmentController extends Controller
         $application->audit_id = Auth::id();
         $application->audit_time = Carbon::now()->format("Y-m-d H:i:s");
         $application->save();
-
+        Message::sendMsg('您的设备使用申请已被拒绝', '我们很遗憾的通知您，您于' . $application->apply_time . '申请的' . $application->equipment->name . '已被拒绝', 'private', $application->user_id);
         return $this->jsonRes(200, '已拒绝此申请');
     }
 
@@ -722,7 +729,7 @@ class EquipmentController extends Controller
         $eda->equipmentRent->status = 'delayed';
         $eda->equipmentRent->apply_time = $eda->apply_time;
         $eda->equipmentRent->save();
-
+        Message::sendMsg('您的设备延期申请已通过', '您于' . $eda->apply_time . '申请的设备延期' . '已通过', 'private', $eda->user_id);
         return $this->jsonRes(200, '已延期此设备借用申请');
     }
 
@@ -740,14 +747,12 @@ class EquipmentController extends Controller
         $eda->audit_id = Auth::id();
         $eda->status = 'rejected';
         $eda->save();
-        if ($eda->equipmentRent->status === 'delay-applying') {
-            $eda->equipmentRent->status = 'assigned';
-            $eda->equipmentRent->apply_time = $eda->apply_time;
-            $eda->equipmentRent->save();
-            return $this->jsonRes(200, '已拒绝此延期申请');
-        } else {
-            return $this->jsonRes(200, '已拒绝此延期申请');
-        }
+        $eda->equipmentRent->status = 'assigned';
+        $eda->equipmentRent->apply_time = $eda->apply_time;
+        $eda->equipmentRent->save();
+        return $this->jsonRes(200, '已拒绝此延期申请');
+        Message::sendMsg('您的设备延期申请已被拒绝', '我们很遗憾的通知您，您于' . $eda->apply_time . '申请的设备延期' . '已被拒绝', 'private', $eda->user_id);
+
     }
 
     // 列出主动上报的设备异常
