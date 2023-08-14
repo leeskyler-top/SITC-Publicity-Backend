@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\CheckInResource;
 use App\Http\Resources\CheckInUsersResource;
 use App\Models\Activity;
+use App\Models\ActivityUser;
 use App\Models\CheckIn;
 use App\Models\CheckInUser;
 use App\Models\Message;
@@ -216,7 +217,7 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkIn = CheckIn::find($id);
-        if (!$checkIn || $checkIn->status !== 'waiting') {
+        if (!$checkIn || $checkIn->status === 'ended') {
             return $this->jsonRes(404, '签到未找到');
         }
         $data = $request->only(['user_id']);
@@ -234,7 +235,44 @@ class CheckInController extends Controller
             return $this->jsonRes(422, $validator->errors()->first());
         }
         $checkIn->checkInUsers()->syncWithoutDetaching($data['user_id'], ['check_in_id' => $checkIn->id]);
+        Message::sendMsg('管理员将您列入一个待签到列表','现在通知您，管理员将您纳入了一个名为' . $checkIn->title . '的签到列表', 'private', null);
         return $this->jsonRes(200, '人员已添加');
     }
 
+    public function removeUser($id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser = CheckInUser::find($id);
+        if ($checkInUser || $checkInUser->checkIn->status === 'ended') {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkInUser->delete();
+        Message::sendMsg('管理员将您列入移出了一个待签到列表','现在通知您，管理员将您从一个名为' . $checkInUser->checkIn->title . '的签到列表中移除', 'private', null);
+        return $this->jsonRes(200, '人员已移除');
+    }
+
+    public function searchUserNotInCheckIn(Request $request, $check_in_id)
+    {
+        if (!is_numeric($check_in_id)) {
+            return $this->jsonRes(404);
+        }
+        $checkIn = CheckIn::find($check_in_id);
+        if (!$checkIn) {
+            return $this->jsonRes(404, '活动未找到');
+        }
+        $data = $request->only(['info']);
+        $checkIn_current_users = $checkIn->checkInUsers()->pluck('user_id')->toArray(); // 获取已参与活动的用户ID数组
+        if (!isset($data['info']) || !$data['info'] || $data['info'] === '*') {
+            $users = ActivityUser::where('activity_id', $checkIn->activity->id)->whereNotIn('user_id', $checkIn_current_users)->get();
+            return $this->jsonRes(200, "用户搜索成功", $users);
+        }
+        $users = User::where(function ($query) use ($data, $checkIn_current_users) {
+            $query->where('name', 'LIKE', '%' . $data['info'] . '%')
+                ->orWhere('uid', 'LIKE', '%' . $data['info'] . '%');
+        })->whereNotIn('id', $checkIn_current_users)
+            ->get();
+        return $this->jsonRes(200, "用户搜索成功", $users);
+    }
 }
