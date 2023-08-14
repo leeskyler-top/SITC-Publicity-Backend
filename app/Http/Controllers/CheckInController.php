@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CheckInResource;
 use App\Http\Resources\CheckInUsersResource;
+use App\Models\Activity;
 use App\Models\CheckIn;
 use App\Models\CheckInUser;
 use App\Models\Message;
@@ -149,6 +150,19 @@ class CheckInController extends Controller
         return $this->jsonRes(200, '签到列表获取成功' . '(' . $status . ')', CheckInUsersResource::collection($checkins));
     }
 
+    public function listCheckInsByActivity($id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404);
+        }
+        $activity = Activity::find($id);
+        if (!$activity) {
+            return $this->jsonRes(404);
+        }
+        $checkIns = $activity->checkIns;
+        return $this->jsonRes(200, '列出所有签到成功', CheckInResource::collection($checkIns));
+    }
+
     public function checkIn(Request $request, $id)
     {
         if (!is_numeric($id)) {
@@ -194,6 +208,33 @@ class CheckInController extends Controller
         $checkInUser->save();
         Message::sendMsg('您的签到被驳回', '我们很遗憾的通知您，管理员驳回了您在' . $checkInUser->checkIn->title . '的签到，详情请咨询活动负责人或管理员', 'private', $checkInUser->user_id);
         return $this->jsonRes(200, '签到已驳回');
+    }
+
+    public function addUser(Request $request, $id)
+    {
+        if (!is_numeric($id)) {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $checkIn = CheckIn::find($id);
+        if (!$checkIn || $checkIn->status !== 'waiting') {
+            return $this->jsonRes(404, '签到未找到');
+        }
+        $data = $request->only(['user_id']);
+        $validator = Validator::make($data, [
+            'user_id' => 'required|array',
+            'user_id.*' => [
+                'required',
+                'integer',
+                Rule::exists('user_id', 'id')->where(function ($query) {
+                    $query->where('deleted_at');
+                }),
+                Rule::exists('check_in_users', 'user_id')->whereDoesntExist('check_in_users', 'check_in_id')
+            ]]);
+        if ($validator->fails()) {
+            return $this->jsonRes(422, $validator->errors()->first());
+        }
+        $checkIn->checkInUsers()->syncWithoutDetaching($data['user_id'], ['check_in_id' => $checkIn->id]);
+        return $this->jsonRes(200, '人员已添加');
     }
 
 }
