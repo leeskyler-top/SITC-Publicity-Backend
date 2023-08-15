@@ -400,7 +400,8 @@ return $next($request)
 - [x] index 列出所有活动
 - [x] show 显示活动具体信息
 - [x] store 新增活动 
-  - [x] 完成通知广播，对当场指派的用户发送通知
+  - [x] 完成通知广播，对当场指派的活动的用户发送通知
+  - [x] 完成通知广播，对可报名信息向所有人发送通知
 - [x] update 更新活动信息 
   - [x] 完成对新增指派用户的通知
 - [x] destroy 删除活动（软删除）
@@ -429,17 +430,28 @@ return $next($request)
 - [x] update 更新签到信息
 - [x] destroy 删除活动（软删除）
 - [x] listCheckInsByActivity 列出当前活动所有签到信息
+- [x] searchUserNotInCheckIn 搜索不在签到中的活动用户
 - [x] revokeCheckInUser 撤销某人在某次签到中的签到行为
   - [x] 完成通知用户
-- [ ] addCheckInUser 为签到组内新增参加活动的人员
-  - [ ] 完成通知用户
-- [ ] removeCheckInUser 将人员从签到组内移出
-  - [ ] 完成通知用户
+- [x] addCheckInUser 为签到组内新增参加活动的人员
+  - [x] 完成通知用户
+- [x] removeCheckInUser 将人员从签到组内移出
+  - [x] 完成通知用户
+
+
 ### MessageController 消息控制器
 - [x] getMyMsg 获取新消息
 - [x] readMsg 已读某个消息
 - [x] readAllMsg 全部已读
 
+
+### FileController 文件控制器
+- [x] normal 普通用户获取图片
+- [x] admin 管理员用户获取图片
+
+
+### ApiHistoryController 操作日志控制器
+- [x] list 列出所有日志信息
 
 ***
 
