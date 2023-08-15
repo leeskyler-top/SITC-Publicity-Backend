@@ -83,7 +83,7 @@ class ActivityController extends Controller
             unset($data['user_id']);
         }
         $activity = Activity::create($data)->refresh();
-        Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'all', null);
+        Message::sendMsg('新活动招募', '管理员发布了新活动' . $activity->title . '，详情请查看活动页面。', 'all', null);
         if ($data['type'] !== 'self-enrollment' && isset($users)) {
             $activity->users()->sync($users);
             foreach ($users as $user) {
@@ -368,7 +368,7 @@ class ActivityController extends Controller
         $activity->activityAudits()->create([
             'user_id' => $user->id
         ]);
-        Message::sendMsg('您有一条 活动报名 申请 待审批', '此消息面向所有管理员，设备申请人:' . Auth::user()->name, 'admin', null);
+        Message::sendMsg('您有一条 活动报名 申请 待审批', '此消息面向所有管理员，活动申请人:' . Auth::user()->name, 'admin', null);
         return $this->jsonRes(200, "活动报名成功");
     }
 }
