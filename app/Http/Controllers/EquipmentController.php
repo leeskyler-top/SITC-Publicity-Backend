@@ -750,8 +750,8 @@ class EquipmentController extends Controller
         $eda->equipmentRent->status = 'assigned';
         $eda->equipmentRent->apply_time = $eda->apply_time;
         $eda->equipmentRent->save();
-        return $this->jsonRes(200, '已拒绝此延期申请');
         Message::sendMsg('您的设备延期申请已被拒绝', '我们很遗憾的通知您，您于' . $eda->apply_time . '申请的设备延期' . '已被拒绝', 'private', $eda->user_id);
+        return $this->jsonRes(200, '已拒绝此延期申请');
 
     }
 

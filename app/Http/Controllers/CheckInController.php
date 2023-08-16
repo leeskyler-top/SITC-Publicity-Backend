@@ -35,6 +35,7 @@ class CheckInController extends Controller
     {
         $data = $request->only([
             'activity_id',
+            'title',
             'user_id',
             'start_time',
             'end_time',
@@ -47,6 +48,7 @@ class CheckInController extends Controller
                     $query->where('deleted_at', null);
                 }),
             ],
+            'title' => 'required',
             'user_id' => 'required|array',
             'user_id.*' => [
                 'integer',
@@ -58,6 +60,7 @@ class CheckInController extends Controller
             'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
         ], [
             'activity_id' => '活动ID必填且必须存在',
+            'title' => '签到标题必填',
             'user_id' => '用户必填',
             'user_id.*' => '用户必须存在',
             'start_time' => '开始时间必填且必须合法',
@@ -171,7 +174,7 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser = CheckInUser::find($id);
-        if (!$checkInUser || $checkInUser->status !== 'unsigned' || $checkInUser->checkIn->status !== 'started') {
+        if (!$checkInUser || $checkInUser->status !== 'unsigned' || $checkInUser->checkIn->status !== 'started' || $checkInUser->user_id !== Auth::id()) {
             return $this->jsonRes(404, '签到未找到');
         }
         $data = $request->only(['image_url']);
