@@ -5,6 +5,7 @@ use App\Http\Controllers\ApiHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EquipmentController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,11 @@ Route::middleware("auth:api")->group(function () {
     Route::prefix('checkin')->group(function () {
         Route::get("/list/{status}", [CheckInController::class, 'listMyCheckIns']);
         Route::post("/now/{id}", [CheckInController::class, 'checkIn']);
+    });
+    Route::prefix('message')->group(function () {
+        Route::get("/", [MessageController::class, 'getMyMsg']);
+        Route::get("/read", [MessageController::class, 'readAllMsg']);
+        Route::get("/read/{id}", [MessageController::class, 'readMsg']);
     });
 });
 Route::middleware("admin")->group(function () {
