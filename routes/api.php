@@ -96,7 +96,7 @@ Route::middleware("admin")->group(function () {
     Route::apiResource("activity", ActivityController::class);
     Route::prefix('checkin')->group(function () {
         Route::get("/revoke/{id}", [CheckInController::class, 'revokeCheckIn']);
-        Route::post("/user/{id}", [CheckInController::class, 'addUser']);
+        Route::post("/user/{check_in_id}", [CheckInController::class, 'addUser']);
         Route::delete("/user/{id}", [CheckInController::class, 'removeUser']);
         Route::post("/user/search/{id}", [CheckInController::class, 'searchUserNotInCheckIn']);
     });

@@ -24,17 +24,15 @@ class CheckInResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'status' => $this->status,
-            'checkInUsers' => $this->checkInUsers->map(function ($checkInUser) {
-                return $checkInUser->users->map(function ($user) use ($checkInUser) {
-                    return [
-                        'user_id' => $user->id,
-                        'department' => $user->department,
-                        'classname' => $user->classname,
-                        'name' => $user->name,
-                        'status' => $checkInUser->status
-                    ];
-                });
-            })->flatten(1),
+            'checkInUsers' => $this->checkInUsers->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'department' => $item->department,
+                    'classname' => $item->classname,
+                    'name' => $item->name,
+                    'status' => $item->pivot->status
+                ];
+            })
         ];
     }
 }

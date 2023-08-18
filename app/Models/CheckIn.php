@@ -20,7 +20,7 @@ class CheckIn extends Model
 
     public function checkInUsers()
     {
-        return $this->hasMany(CheckInUser::class);
+        return $this->belongsToMany(User::class, 'check_in_users', 'check_in_id', 'user_id')->withPivot('status');
     }
 
     // 不知道

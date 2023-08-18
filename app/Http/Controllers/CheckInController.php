@@ -230,16 +230,18 @@ class CheckInController extends Controller
             'user_id.*' => [
                 'required',
                 'integer',
-                Rule::exists('user_id', 'id')->where(function ($query) {
+                Rule::exists('users', 'id')->where(function ($query) {
                     $query->where('deleted_at');
                 }),
-                Rule::exists('check_in_users', 'user_id')->whereDoesntExist('check_in_users', 'check_in_id')
+                Rule::exists('activity_users', 'user_id')
             ]]);
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-        $checkIn->checkInUsers()->syncWithoutDetaching($data['user_id'], ['check_in_id' => $checkIn->id]);
-        Message::sendMsg('管理员将您列入一个待签到列表', '现在通知您，管理员将您纳入了一个名为' . $checkIn->title . '的签到列表', 'private', null);
+        $checkIn->checkInUsers()->syncWithoutDetaching($data['user_id']);
+        foreach ($data['user_id'] as $user) {
+            Message::sendMsg('管理员将您列入一个待签到列表', '现在通知您，管理员将您纳入了一个名为' . $checkIn->title . '的签到列表', 'private', $user);
+        }
         return $this->jsonRes(200, '人员已添加');
     }
 

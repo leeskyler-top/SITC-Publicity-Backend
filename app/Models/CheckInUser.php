@@ -15,11 +15,6 @@ class CheckInUser extends Model
         return $this->belongsTo(CheckIn::class);
     }
 
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'check_in_users', 'check_in_id', 'user_id');
-    }
-
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format("Y-m-d H:i:s");
