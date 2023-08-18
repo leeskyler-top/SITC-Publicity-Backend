@@ -405,14 +405,13 @@ return $next($request)
 - [x] update 更新活动信息 
   - [x] 完成对新增指派用户的通知
 - [x] destroy 删除活动（软删除）
-  - [ ] 完成将未进行的签到删除
 - [x] removeUser 将某人从某个活动中移出 
-  - [ ] 完成同步将用户从未开始的签到组中删除，已开始的不会移除。
+  - [x] 完成同步将用户从未开始的签到组中删除，已开始的不会移除。
   - [x] 完成通知用户
 - [x] searchUserNotInActivityByName 模糊搜索不在某个活动中的用户
 - [x] listEnrollments 列出报名
 - [x] AgreeActivityEnrollments 同意报名 
-  - [ ] 完成同步将用户添加至正在进行或已开始的签到 
+  - [x] 完成同步将用户添加至未开始的签到 
   - [x] 完成通知用户
 - [x] RejectActivityEnrollments 拒绝报名  
   - [x] 完成通知用户

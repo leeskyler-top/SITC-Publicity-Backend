@@ -207,6 +207,11 @@ class ActivityController extends Controller
         if (!$user_validator) {
             return $this->jsonRes(404, '用户不存在');
         }
+        $checkIns = $activity->checkIns->where('start_time', '>', now())->get();
+        $checkIns->checkInUsers->where(['pivot.user_id' => $user_id])->get();
+        foreach ($checkIns as $checkIn) {
+            $checkIn->delete();
+        }
         $activity->users()->detach($user_id);
         Message::sendMsg('管理员将您从活动人员中移除', '我们很遗憾的通知您：管理员已将您从'  . $activity->title . '活动人员中移除，详情请咨询活动负责人或管理员' , 'private', $user_id);
         return $this->jsonRes(200, "用户已移出");
@@ -321,6 +326,10 @@ class ActivityController extends Controller
             'user_id' => $application->user_id,
             'activity_id' => $application->activity_id,
         ]);
+        $checkIns = $application->activity->checkIns->where('start_time', '>', now())->get();
+        foreach ($checkIns as $checkIn) {
+            $checkIn->checkInUser->attach($application->user_id);
+        }
         Message::sendMsg('您的活动报名申请已通过', '您于' . $application->created_at . '报名的' . $application->activity->title . '活动已通过' , 'private', $application->user_id);
         return $this->jsonRes(200, "已同意此申请");
     }
