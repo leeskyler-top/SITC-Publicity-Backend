@@ -73,11 +73,7 @@ class CheckInController extends Controller
         unset($data['user_id']);
         $data['admin_id'] = Auth::id();
         $checkIn = CheckIn::create($data);
-        foreach ($users as $user) {
-            $checkIn->checkInUsers()->create([
-                'user_id' => $user
-            ]);
-        }
+        $checkIn->checkInUsers()->attach($users);
         return $this->jsonRes(200, '签到创建成功', new CheckInResource($checkIn));
     }
 
