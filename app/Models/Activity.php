@@ -5,15 +5,10 @@ namespace App\Models;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Activity extends Model
 {
-    use HasFactory, SoftDeletes;
-
-    protected $hidden = [
-        'deleted_at'
-    ];
+    use HasFactory;
     public function users()
     {
         return $this->belongsToMany(User::class, 'activity_users');
@@ -30,7 +25,7 @@ class Activity extends Model
         return $this->hasMany(ActivityAudit::class);
     }
 
-    public function chedckIns()
+    public function checkIns()
     {
         return $this->hasMany(CheckIn::class);
     }

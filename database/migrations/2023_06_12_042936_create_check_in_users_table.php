@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('check_in_users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('check_in_id')->constrained();
+            $table->foreignId('check_in_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained();
             $table->enum('status', ['signed', 'unsigned'])->default('unsigned');
             $table->text('image_url')->nullable();

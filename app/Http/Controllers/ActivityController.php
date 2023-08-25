@@ -161,13 +161,13 @@ class ActivityController extends Controller
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
         }
-        foreach ($data['user_id'] as $user_id) {
-            if ($activity->users()->where('user_id', $user_id)->exists()) {
-                continue;
-            }
-            Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'private', $user_id);
-        }
         if (isset($data['user_id'])) {
+            foreach ($data['user_id'] as $user_id) {
+                if ($activity->users()->where('user_id', $user_id)->exists()) {
+                    continue;
+                }
+                Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'private', $user_id);
+            }
             $activity->users()->syncWithoutDetaching($data['user_id']);
             unset($data['user_id']);
         }
@@ -188,9 +188,9 @@ class ActivityController extends Controller
             return $this->jsonRes(404, '活动未找到');
         }
         $activity->users()->detach();
-        $activity->ActivityAudits()->delete();
-        $activity->delete();
+        $activity->activityAudits()->delete();
         $activity->checkIns()->delete();
+        $activity->delete();
         return $this->jsonRes(200, "活动已删除");
     }
 

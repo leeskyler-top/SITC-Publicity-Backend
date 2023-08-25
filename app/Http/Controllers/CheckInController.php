@@ -44,9 +44,7 @@ class CheckInController extends Controller
             'activity_id' => [
                 'integer',
                 'required',
-                Rule::exists('activities', 'id')->where(function ($query) {
-                    $query->where('deleted_at', null);
-                }),
+                Rule::exists('activities', 'id')
             ],
             'title' => 'required',
             'user_id' => 'required|array',
@@ -74,6 +72,9 @@ class CheckInController extends Controller
         $data['admin_id'] = Auth::id();
         $checkIn = CheckIn::create($data);
         $checkIn->checkInUsers()->attach($users);
+        foreach ($users as $user) {
+            Message::sendMsg("管理员将您列入一个待签到列表", "现在通知您，管理员将您纳入了一个名为" . $checkIn->title . "的签到列表", 'private', $user);
+        }
         return $this->jsonRes(200, '签到创建成功', new CheckInResource($checkIn));
     }
 
@@ -134,7 +135,7 @@ class CheckInController extends Controller
         if (!$checkIn) {
             return $this->jsonRes(404, '签到未找到');
         }
-        $checkIn->checkInUsers()->delete();
+        $checkIn->checkInUsers()->detach();
         $checkIn->delete();
         return $this->jsonRes(200, "此签到已删除");
     }
