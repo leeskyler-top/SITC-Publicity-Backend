@@ -10,7 +10,7 @@ class FileController extends Controller
 {
     function normal($type, $filename)
     {
-        $types = ['assigned', 'damaged', 'returned'];
+        $types = ['assigned', 'damaged', 'returned', 'checkin'];
         if (!in_array($type, $types)) {
             return $this->jsonRes(404, '类型不存在');
         }
@@ -29,7 +29,7 @@ class FileController extends Controller
 
     function admin($type, $filename)
     {
-        $types = ['assigned', 'damaged', 'returned'];
+        $types = ['assigned', 'damaged', 'returned', 'checkin'];
         if (!in_array($type, $types)) {
             return $this->jsonRes(404, '类型不存在');
         }

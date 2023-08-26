@@ -24,7 +24,7 @@ class ActivityResource extends JsonResource
             'note' => $this->note,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'users' => $this->loadMissing('users')->users->makeHidden(['pivot', 'token']),
+            'users' => $this->loadMissing('users')->users->makeHidden(['pivot', 'token', 'is_admin', 'created_at']),
             'status' => $this->status,
             'is_enrolling' => $this->is_enrolling,
         ];

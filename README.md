@@ -275,6 +275,7 @@ mkdir -p ./public/files/images/assigned
 mkdir -p ./public/files/images/damaged
 mkdir -p ./public/files/images/returned
 mkdir -p ./public/files/images/activity
+mkdir -p ./public/files/images/checkin
 composer install
 chown -R www-data:www-data ./*
 chmod -R 755 ./*

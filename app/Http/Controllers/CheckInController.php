@@ -108,11 +108,17 @@ class CheckInController extends Controller
         $data = $request->only([
             'start_time',
             'end_time',
+            'title'
         ]);
+        $data = array_filter($data, function ($value) {
+            return !empty($value) || $value === 0 || $value === '0';
+        });
         $validator = Validator::make($data, [
-            'start_time' => 'required|date_format:Y-m-d H:i:s',
-            'end_time' => 'required|date_format:Y-m-d H:i:s|after:start_time',
+            'start_time' => 'date_format:Y-m-d H:i:s',
+            'end_time' => 'date_format:Y-m-d H:i:s|after:start_time',
+            'title' => 'string'
         ], [
+            'title' => '签到名称需要为字符串',
             'start_time' => '开始时间必填且必须合法',
             'end_time' => '结束时间必填且必须合法',
         ]);
@@ -187,7 +193,7 @@ class CheckInController extends Controller
         }
         $checkInUser->status = 'signed';
         foreach ($data['image_url'] as $image) {
-            $path = Storage::put('images/assigned', $image);
+            $path = Storage::put('images/checkin', $image);
             $imageUrls[] = $path;
         }
 

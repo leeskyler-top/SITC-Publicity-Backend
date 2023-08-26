@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,11 +28,14 @@ class CheckInResource extends JsonResource
             'status' => $this->status,
             'checkInUsers' => $this->checkInUsers->map(function ($item) {
                 return [
-                    'id' => $item->id,
+                    'id' => $item->pivot->id,
+                    'uid' => $item->uid,
                     'department' => $item->department,
                     'classname' => $item->classname,
                     'name' => $item->name,
-                    'status' => $item->pivot->status
+                    'image_url' => $item->pivot->image_url,
+                    'status' => $item->pivot->status,
+                    'updated_at' => Carbon::parse($item->pivot->updated_at)->format("Y-m-d H:i:s")
                 ];
             })
         ];
