@@ -254,7 +254,7 @@ class CheckInController extends Controller
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser = CheckInUser::find($id);
-        if ($checkInUser || $checkInUser->checkIn->status === 'ended') {
+        if (!$checkInUser || $checkInUser->checkIn->status === 'ended') {
             return $this->jsonRes(404, '签到未找到');
         }
         $checkInUser->delete();
