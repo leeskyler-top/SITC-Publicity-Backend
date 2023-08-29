@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ActivityUsersResource;
 use App\Http\Resources\CheckInResource;
 use App\Http\Resources\CheckInUsersResource;
 use App\Models\Activity;
@@ -272,19 +273,18 @@ class CheckInController extends Controller
 
         $data = $request->only(['info']);
         $checkIn_current_users = $checkIn->checkInUsers()->pluck('user_id')->toArray();
-
         $usersQuery = ActivityUser::where('activity_id', $checkIn->activity->id)
             ->whereNotIn('user_id', $checkIn_current_users);
 
         if (!isset($data['info']) || $data['info'] === '*' || $data['info'] === '') {
-            $users = $usersQuery->get();
+            $users = ActivityUsersResource::collection($usersQuery->get());
         } else {
-            $usersQuery->orWhere(function ($query) use ($data, $checkIn_current_users) {
+            $usersQuery->whereHas('user', function ($query) use ($data) {
                 $query->where('name', 'LIKE', '%' . $data['info'] . '%')
                     ->orWhere('uid', 'LIKE', '%' . $data['info'] . '%');
             });
 
-            $users = $usersQuery->get();
+            $users = ActivityUsersResource::collection($usersQuery->get());
         }
 
         return $this->jsonRes(200, "用户搜索成功", $users);

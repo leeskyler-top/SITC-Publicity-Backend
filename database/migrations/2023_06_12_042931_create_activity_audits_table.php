@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('activity_audits', function (Blueprint $table) {
             $table->id();
             $table->foreignId('activity_id')->constrained();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('audit_id')->nullable();
             $table->foreign('audit_id')->references('id')->on('users')->cascadeOnDelete();
             $table->enum('status', ['applying', 'rejected', 'agreed'])->default('applying');

@@ -105,7 +105,7 @@ Route::middleware("admin")->group(function () {
         Route::get("/activity/{id}", [CheckInController::class, 'listCheckInsByActivity']);
         Route::post("/user/{check_in_id}", [CheckInController::class, 'addUser']);
         Route::delete("/user/{id}", [CheckInController::class, 'removeUser']);
-        Route::post("/user/search/{id}", [CheckInController::class, 'searchUserNotInCheckIn']);
+        Route::post("/search/users/{id}", [CheckInController::class, 'searchUserNotInCheckIn']);
     });
     Route::apiResource("checkin", CheckInController::class);
     Route::prefix('/security-history')->group(function () {
