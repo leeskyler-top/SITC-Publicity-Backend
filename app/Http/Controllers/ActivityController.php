@@ -207,10 +207,9 @@ class ActivityController extends Controller
         if (!$user_validator) {
             return $this->jsonRes(404, '用户不存在');
         }
-        $checkIns = $activity->checkIns->where('start_time', '>', now())->get();
-        $checkIns->checkInUsers->where(['pivot.user_id' => $user_id])->get();
+        $checkIns = $activity->checkIns()->where('start_time', '>', now())->get();
         foreach ($checkIns as $checkIn) {
-            $checkIn->delete();
+            $checkIn->checkInUsers()->detach($user_id);
         }
         $activity->users()->detach($user_id);
         Message::sendMsg('管理员将您从活动人员中移除', '我们很遗憾的通知您：管理员已将您从'  . $activity->title . '活动人员中移除，详情请咨询活动负责人或管理员' , 'private', $user_id);
