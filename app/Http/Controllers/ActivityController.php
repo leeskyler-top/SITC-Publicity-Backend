@@ -129,24 +129,41 @@ class ActivityController extends Controller
             'start_time',
             'end_time',
             'user_id',
-            'is_enrolling'
+            'is_enrolling',
+            'add_to_checkin'
         ]);
         $data = array_filter($data, function ($value) {
             return !empty($value) || $value === 0 || $value === '0';
         });
+
         $validator = Validator::make($data, [
             'title' => 'string',
             'place' => 'string',
             'note' => 'string',
             'start_time' => 'date_format:Y-m-d H:i:s',
             'end_time' => 'date_format:Y-m-d H:i:s|after:start_time',
-            'user_id' => 'array',
+            'user_id' => [
+                'array',
+                Rule::requiredIf(function () use ($data) {
+                    if (isset($data['add_to_checkin'])) {
+                        return 1;
+                    }
+                }),
+            ],
             'user_id.*' => [
                 Rule::exists('users', 'id')->where(function ($query) {
                     $query->where('deleted_at', null);
                 }),
             ],
-            'is_enrolling' => 'in:1,0'
+            'is_enrolling' => 'in:1,0',
+            'add_to_checkin' => [
+                'in:1,0',
+                Rule::requiredIf(function () use ($data) {
+                    if (isset($data['user_id'])) {
+                        return 1;
+                    }
+                }),
+            ]
         ], [
             'title' => '标题必填',
             'type.required' => '类型必填',
@@ -156,7 +173,8 @@ class ActivityController extends Controller
             'start_time' => '开始时间必填，并且必须合法',
             'end_time' => '结束时间必填，并且不得早于开始时间',
             'user_id' => '用户必须是存在的',
-            'is_enrolling' => '必须是1或0'
+            'is_enrolling' => '必须是1或0',
+            'add_to_checkin' => '签到组选项必填，值必须为1或0'
         ]);
         if ($validator->fails()) {
             return $this->jsonRes(422, $validator->errors()->first());
@@ -166,10 +184,18 @@ class ActivityController extends Controller
                 if ($activity->users()->where('user_id', $user_id)->exists()) {
                     continue;
                 }
+
                 Message::sendMsg('管理员将您添加至一个活动的人员名单', '现在通知您, 管理员已将您列入' . $activity->title . '活动人员名单，详情请咨询活动负责人或管理员', 'private', $user_id);
             }
             $activity->users()->syncWithoutDetaching($data['user_id']);
+            if (isset($data['add_to_checkin']) && $data['add_to_checkin'] === '1') {
+                $checkIns = $activity->checkIns()->where('start_time', '>', now())->get();
+                foreach ($checkIns as $checkIn) {
+                    $checkIn->checkInUsers()->syncWithoutDetaching($data['user_id']);
+                }
+            }
             unset($data['user_id']);
+            unset($data['add_to_checkin']);
         }
         $activity->fill($data)->save();
         return $this->jsonRes(200, '活动修改成功', new ActivityResource($activity));

@@ -41,6 +41,9 @@ class CheckInController extends Controller
             'start_time',
             'end_time',
         ]);
+        if (!isset($data['activity_id'])) {
+            return $this->jsonRes(400, "未填写所属活动");
+        }
         $validator = Validator::make($data, [
             'activity_id' => [
                 'integer',
